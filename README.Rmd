@@ -15,43 +15,65 @@ knitr::opts_chunk$set(
 
 # coracle
 
+![`coracle hex`](man/figures/coracle_hex.png){width="150"}
+
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![CRAN status](https://www.r-pkg.org/badges/version/coracle)](https://CRAN.R-project.org/package=coracle)
+
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![CRAN status](https://www.r-pkg.org/badges/version/coracle)](https://CRAN.R-project.org/package=coracle)
+
 <!-- badges: end -->
 
 The goal of coracle is to provide functions for correlating data in columns.
+
+**CORR**elating **COL**umns -\> "corr + col" -\> `coracle`, a type of small boat.
 
 ## Installation
 
 You can install the development version of coracle from [GitHub](https://github.com/) with:
 
-``` r
-# install.packages("pak")
-pak::pak("Brubaker-Lab/coracle")
+```{r}
+install.packages("devtools")
+devtools::install_github("Brubaker-Lab/coracle")
 ```
+
+This may fail for a variety of reasons. Contact Ray for assistance.
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+First we need some tidy data frames where observations are rows and variables are the columns.
 
-```{r example}
-#library(coracle)
-## basic example code
+```{r}
+
+index <- c("A", "B", "C", "D", "E")
+up_values <- 1:5
+down_values <- 5:1
+random_values <- c(runif(5))
+
+
+df1 <- data.frame(i = index,
+                  u1 = up_values,
+                  d1 = down_values,
+                  r1 = random_values)
+df2 <- data.frame(i = index,
+                  u2 = up_values,
+                  d2 = down_values,
+                  r2 = random_values)
+
+df1
+df2
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+Now we'll correlate `df1` with `df2` using `coracle`'s `corr_col` function:
 
-```{r cars}
-summary(cars)
+```{r}
+library(coracle)
+
+result <- corr_col(x_data = df1,
+                   y_data = df2,
+                   x_name = "df1",
+                   y_name = "df2")
+
+result
 ```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.

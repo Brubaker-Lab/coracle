@@ -23,7 +23,7 @@ corr_col <- function(x_data,
   stopifnot("Error: No string given for `y_name`." = is.character(y_name))
 
   stopifnot("Error: x has no numeric data." = x_data %>%
-              select(where(is.numeric)) %>%
+              dplyr::select(where(is.numeric)) %>%
               ncol() > 0)
   stopifnot("Error: y has no numeric data." = y_data %>%
               select(where(is.numeric)) %>%

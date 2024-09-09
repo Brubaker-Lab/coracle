@@ -1,9 +1,13 @@
 #' @keywords internal
 "_PACKAGE"
 
+## usethis namespace: start
 #' @import dplyr
 #' @import tidyr
-#' @import magrittr
+#' @importFrom magrittr %>%
 #' @import purrr
 #' @import tibble
-#' @import stats
+#' @importFrom stats p.adjust cor.test
+#' @import stringr
+## usethis namespace: end
+NULL
