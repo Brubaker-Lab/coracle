@@ -31,7 +31,7 @@ The goal of coracle is to provide functions for correlating data in columns.
 
 You can install the development version of coracle from [GitHub](https://github.com/) with:
 
-```{r}
+```{r eval=FALSE}
 install.packages("devtools")
 devtools::install_github("Brubaker-Lab/coracle")
 library(coracle)
@@ -41,10 +41,9 @@ This may fail for a variety of reasons. Contact Ray for assistance.
 
 ## Example
 
-First we need some tidy data frames where observations are rows and variables are the columns.
+First we need some tidy data frames where observations are rows (i.e. patients) and variables are columns (i.e. gene signatures).
 
 ```{r}
-
 index <- c("A", "B", "C", "D", "E")
 up_values <- 1:5
 down_values <- 5:1
