@@ -34,6 +34,7 @@ You can install the development version of coracle from [GitHub](https://github.
 ```{r}
 install.packages("devtools")
 devtools::install_github("Brubaker-Lab/coracle")
+library(coracle)
 ```
 
 This may fail for a variety of reasons. Contact Ray for assistance.

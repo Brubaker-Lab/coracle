@@ -3,16 +3,25 @@
 
 # coracle
 
+<figure>
+<img src="man/figures/coracle_hex.png" width="150" alt="coracle hex" />
+<figcaption aria-hidden="true"><code>coracle hex</code></figcaption>
+</figure>
+
 <!-- badges: start -->
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/coracle)](https://CRAN.R-project.org/package=coracle)
+
 <!-- badges: end -->
 
 The goal of coracle is to provide functions for correlating data in
 columns.
+
+**CORR**elating **COL**umns -\> “corr + col” -\> `coracle`, a type of
+small boat.
 
 ## Installation
 
@@ -20,39 +29,79 @@ You can install the development version of coracle from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("pak")
-pak::pak("Brubaker-Lab/coracle")
+install.packages("devtools")
+#> Warning: package 'devtools' is in use and will not be installed
+devtools::install_github("Brubaker-Lab/coracle")
+#> Using GitHub PAT from the git credential store.
+#> Skipping install of 'coracle' from a github remote, the SHA1 (5315e632) has not changed since last install.
+#>   Use `force = TRUE` to force installation
+library(coracle)
 ```
+
+This may fail for a variety of reasons. Contact Ray for assistance.
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+First we need some tidy data frames where observations are rows and
+variables are the columns.
 
 ``` r
-#library(coracle)
-## basic example code
+
+index <- c("A", "B", "C", "D", "E")
+up_values <- 1:5
+down_values <- 5:1
+random_values <- c(runif(5))
+
+
+df1 <- data.frame(i = index,
+                  u1 = up_values,
+                  d1 = down_values,
+                  r1 = random_values)
+df2 <- data.frame(i = index,
+                  u2 = up_values,
+                  d2 = down_values,
+                  r2 = random_values)
+
+df1
+#>   i u1 d1         r1
+#> 1 A  1  5 0.92154041
+#> 2 B  2  4 0.74658795
+#> 3 C  3  3 0.04184750
+#> 4 D  4  2 0.77602843
+#> 5 E  5  1 0.07471058
+df2
+#>   i u2 d2         r2
+#> 1 A  1  5 0.92154041
+#> 2 B  2  4 0.74658795
+#> 3 C  3  3 0.04184750
+#> 4 D  4  2 0.77602843
+#> 5 E  5  1 0.07471058
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+Now we’ll correlate `df1` with `df2` using `coracle`’s `corr_col`
+function:
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+library(coracle)
+
+result <- corr_col(x_data = df1,
+                   y_data = df2,
+                   x_name = "df1",
+                   y_name = "df2")
+#> Joining data by these columns. Provide `join_vars` to override.
+#> i = i
+
+result
+#> # A tibble: 9 × 8
+#>   df1   df2     rho        p     n        q    q_df1    q_df2
+#>   <chr> <chr> <dbl>    <dbl> <int>    <dbl>    <dbl>    <dbl>
+#> 1 u1    u2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
+#> 2 u1    d2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
+#> 3 u1    r2     -0.5 3.91e- 1     5 3.91e- 1 3.91e- 1 3.91e- 1
+#> 4 d1    u2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
+#> 5 d1    d2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
+#> 6 d1    r2      0.5 3.91e- 1     5 3.91e- 1 3.91e- 1 3.91e- 1
+#> 7 r1    u2     -0.5 3.91e- 1     5 3.91e- 1 3.91e- 1 3.91e- 1
+#> 8 r1    d2      0.5 3.91e- 1     5 3.91e- 1 3.91e- 1 3.91e- 1
+#> 9 r1    r2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
 ```
-
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
