@@ -12,6 +12,31 @@ values_random <- c(runif(5))
 
 
 test_that("Arguments checked for validity",{
-  expect_error(corr_col(x = "Not a data frame", y = tibble(i = indexes)))
-  expect_error(corr_col(x = tibble(i = indexes), y = "Not a data frame"))
+  expect_error(corr_col(x = "Not a data frame",
+                        y = tibble(i = indexes, v = values_up),
+                        x_name = "x_name",
+                        y_name = "y_name"))
+  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
+                        y = "Not a data frame",
+                        x_name = "x_name",
+                        y_name = "y_name"))
+  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
+                        x = tibble(i = indexes, v = values_up),
+                        #x_name = "x_name",
+                        y_name = "y_name"))
+  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
+                        x = tibble(i = indexes, v = values_up),
+                        x_name = "x_name"#,
+                        #y_name = "y_name"
+                        ))
+  expect_error(corr_col(x = tibble(i = indexes, n = values_nonnumeric),
+                        x = tibble(i = indexes, v = values_up),
+                        x_name = "x_name",
+                        y_name = "y_name"
+  ))
+  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
+                        x = tibble(i = indexes, n = values_nonnumeric),
+                        x_name = "x_name",
+                        y_name = "y_name"
+  ))
 })

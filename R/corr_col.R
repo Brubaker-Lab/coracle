@@ -8,6 +8,7 @@
 #' @param join_vars A named list of column names for joining, passed to `dplyr::inner_join()`'s `by` argument. See `dplyr` reference for information.
 #'
 #' @return A data frame of correlation results.
+#'
 #' @export
 corr_col <- function(x_data,
                      y_data,
