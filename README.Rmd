@@ -37,7 +37,7 @@ devtools::install_github("Brubaker-Lab/coracle")
 library(coracle)
 ```
 
-This may fail for a variety of reasons. Contact Ray for assistance.
+This may fail for a variety of reasons. If it does fail, try following [these instructions for installing R packages and setting up GitHub credentials on the HPC](https://github.com/Brubaker-Lab/Library/blob/82c1c998db482f1bbae00c23f0841e6ce2cb941b/HPC/Installing%20R%20Packages%2C%20Setting%20Up%20GitHub%20Credentials.md). Contact Ray for assistance.
 
 ## Example
 

@@ -34,7 +34,11 @@ devtools::install_github("Brubaker-Lab/coracle")
 library(coracle)
 ```
 
-This may fail for a variety of reasons. Contact Ray for assistance.
+This may fail for a variety of reasons. If it does fail, try following
+[these instructions for installing R packages and setting up GitHub
+credentials on the
+HPC](https://github.com/Brubaker-Lab/Library/blob/82c1c998db482f1bbae00c23f0841e6ce2cb941b/HPC/Installing%20R%20Packages%2C%20Setting%20Up%20GitHub%20Credentials.md).
+Contact Ray for assistance.
 
 ## Example
 
@@ -58,19 +62,19 @@ df2 <- data.frame(i = index,
                   r2 = random_values)
 
 df1
-#>   i u1 d1        r1
-#> 1 A  1  5 0.4664959
-#> 2 B  2  4 0.3959033
-#> 3 C  3  3 0.9710254
-#> 4 D  4  2 0.1760963
-#> 5 E  5  1 0.7149128
+#>   i u1 d1         r1
+#> 1 A  1  5 0.51361999
+#> 2 B  2  4 0.20015764
+#> 3 C  3  3 0.03174676
+#> 4 D  4  2 0.24085009
+#> 5 E  5  1 0.42413124
 df2
-#>   i u2 d2        r2
-#> 1 A  1  5 0.4664959
-#> 2 B  2  4 0.3959033
-#> 3 C  3  3 0.9710254
-#> 4 D  4  2 0.1760963
-#> 5 E  5  1 0.7149128
+#>   i u2 d2         r2
+#> 1 A  1  5 0.51361999
+#> 2 B  2  4 0.20015764
+#> 3 C  3  3 0.03174676
+#> 4 D  4  2 0.24085009
+#> 5 E  5  1 0.42413124
 ```
 
 Now we’ll correlate `df1` with `df2` using `coracle`’s `corr_col`
@@ -92,11 +96,11 @@ result
 #>   <chr> <chr> <dbl>    <dbl> <int>    <dbl>    <dbl>    <dbl>
 #> 1 u1    u2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
 #> 2 u1    d2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
-#> 3 u1    r2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
+#> 3 u1    r2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
 #> 4 d1    u2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
 #> 5 d1    d2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
-#> 6 d1    r2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 7 r1    u2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 8 r1    d2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
+#> 6 d1    r2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
+#> 7 r1    u2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
+#> 8 r1    d2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
 #> 9 r1    r2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
 ```
