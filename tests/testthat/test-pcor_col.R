@@ -1,0 +1,15 @@
+indexes <- c("a", "b", "c", "d", "e")
+indexes_alt <- c("c", "d", "e", "f", "g")
+values_up <- c(1, 2, 3, 4, 5)
+values_down <- c(5, 4, 3, 2, 1)
+values_constant <- c(1, 1, 1, 1, 1)
+values_up_na <- c(1, 2, 3, NA, 5)
+values_dn_na <- c(5, NA, 3, 2, 1)
+values_all_na <- as.numeric(c(NA, NA, NA, NA, NA))
+values_single <- c(NA, NA, 3, NA, NA)
+values_nonnumeric <- c("a", "b", "c", "d", "e")
+values_random <- c(runif(5))
+
+test_that("multiplication works", {
+  expect_equal(2 * 2, 4)
+})

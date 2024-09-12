@@ -3,10 +3,7 @@
 
 # coracle
 
-<figure>
-<img src="man/figures/coracle_hex.png" width="150" alt="coracle hex" />
-<figcaption aria-hidden="true"><code>coracle hex</code></figcaption>
-</figure>
+<img src="man/figures/coracle_hex.png" width="150" />
 
 <!-- badges: start -->
 
@@ -17,11 +14,8 @@ status](https://www.r-pkg.org/badges/version/coracle)](https://CRAN.R-project.or
 
 <!-- badges: end -->
 
-The goal of coracle is to provide functions for correlating data in
-columns.
-
-**CORR**elating **COL**umns -\> “corr + col” -\> `coracle`, a type of
-small boat.
+Correlations of Columns for Tidy Data \>\> “Corr” & “Col” \>\>
+“Coracle”, a type of small boat.
 
 ## Installation
 
@@ -31,76 +25,67 @@ You can install the development version of coracle from
 ``` r
 install.packages("devtools")
 devtools::install_github("Brubaker-Lab/coracle")
-library(coracle)
 ```
 
-This may fail for a variety of reasons. If it does fail, try following
-[these instructions for installing R packages and setting up GitHub
-credentials on the
-HPC](https://github.com/Brubaker-Lab/Library/blob/82c1c998db482f1bbae00c23f0841e6ce2cb941b/HPC/Installing%20R%20Packages%2C%20Setting%20Up%20GitHub%20Credentials.md).
-Contact Ray for assistance.
+This may fail for a variety of reasons.
 
-## Example
+## Examples
 
-First we need some tidy data frames where observations are rows
-(i.e. patients) and variables are columns (i.e. gene signatures).
+These functions are written to accommodate a few different cases.
+
+### One Data Frame
+
+When `coracle` receives a single data frame (the required `x` argument)
+it does pairwise correlation between all pairs of numeric columns within
+that data frame. For example:
 
 ``` r
 index <- c("A", "B", "C", "D", "E")
 up_values <- 1:5
 down_values <- 5:1
 random_values <- c(runif(5))
+missing_values <- c(NA, NA, NA, NA, 1)
 
+df <- data.frame(index, up_values, down_values, random_values, missing_values)
 
-df1 <- data.frame(i = index,
-                  u1 = up_values,
-                  d1 = down_values,
-                  r1 = random_values)
-df2 <- data.frame(i = index,
-                  u2 = up_values,
-                  d2 = down_values,
-                  r2 = random_values)
-
-df1
-#>   i u1 d1         r1
-#> 1 A  1  5 0.51361999
-#> 2 B  2  4 0.20015764
-#> 3 C  3  3 0.03174676
-#> 4 D  4  2 0.24085009
-#> 5 E  5  1 0.42413124
-df2
-#>   i u2 d2         r2
-#> 1 A  1  5 0.51361999
-#> 2 B  2  4 0.20015764
-#> 3 C  3  3 0.03174676
-#> 4 D  4  2 0.24085009
-#> 5 E  5  1 0.42413124
+df
+#>   index up_values down_values random_values missing_values
+#> 1     A         1           5     0.2307645             NA
+#> 2     B         2           4     0.2953659             NA
+#> 3     C         3           3     0.5861620             NA
+#> 4     D         4           2     0.1854683             NA
+#> 5     E         5           1     0.4417778              1
 ```
 
-Now we’ll correlate `df1` with `df2` using `coracle`’s `corr_col`
-function:
+Next we’ll correlate that data frame with `coracle`:
 
 ``` r
 library(coracle)
 
-result <- corr_col(x_data = df1,
-                   y_data = df2,
-                   x_name = "df1",
-                   y_name = "df2")
-#> Joining data by these columns. Provide `join_vars` to override.
-#> i = i
+result <- corr_col(x = df)
 
 result
-#> # A tibble: 9 × 8
-#>   df1   df2     rho        p     n        q    q_df1    q_df2
-#>   <chr> <chr> <dbl>    <dbl> <int>    <dbl>    <dbl>    <dbl>
-#> 1 u1    u2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
-#> 2 u1    d2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
-#> 3 u1    r2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 4 d1    u2     -1   1.12e-23     5 2.02e-23 1.69e-23 1.69e-23
-#> 5 d1    d2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
-#> 6 d1    r2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 7 r1    u2     -0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 8 r1    d2      0.1 8.73e- 1     5 8.73e- 1 8.73e- 1 8.73e- 1
-#> 9 r1    r2      1   3.97e-24     5 1.19e-23 1.19e-23 1.19e-23
+#>               x              y  rho            p                          error
+#> 1     up_values    down_values -1.0 1.123412e-23                           <NA>
+#> 2     up_values  random_values  0.2 7.470601e-01                           <NA>
+#> 3     up_values missing_values   NA           NA not enough finite observations
+#> 4   down_values  random_values -0.2 7.470601e-01                           <NA>
+#> 5   down_values missing_values   NA           NA not enough finite observations
+#> 6 random_values missing_values   NA           NA not enough finite observations
+#>              q
+#> 1 3.370237e-23
+#> 2 7.470601e-01
+#> 3           NA
+#> 4 7.470601e-01
+#> 5           NA
+#> 6           NA
 ```
+
+Notes:
+
+- Correlations are calculated for every combination of numeric columns.
+- Non numeric data (such as `index`) are excluded.
+- Correlations which could not be calculated return `NA` and a brief
+  `error` description.
+
+### Two Data Frames

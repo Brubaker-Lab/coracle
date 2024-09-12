@@ -1,5 +1,5 @@
 indexes <- c("a", "b", "c", "d", "e")
-indexes_long <- c("c", "d", "e", "f", "g")
+indexes_alt <- c("c", "d", "e", "f", "g")
 values_up <- c(1, 2, 3, 4, 5)
 values_down <- c(5, 4, 3, 2, 1)
 values_constant <- c(1, 1, 1, 1, 1)
@@ -11,32 +11,37 @@ values_nonnumeric <- c("a", "b", "c", "d", "e")
 values_random <- c(runif(5))
 
 
-test_that("Arguments checked for validity",{
-  expect_error(corr_col(x = "Not a data frame",
-                        y = tibble(i = indexes, v = values_up),
-                        x_name = "x_name",
-                        y_name = "y_name"))
-  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
-                        y = "Not a data frame",
-                        x_name = "x_name",
-                        y_name = "y_name"))
-  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
-                        x = tibble(i = indexes, v = values_up),
-                        #x_name = "x_name",
-                        y_name = "y_name"))
-  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
-                        x = tibble(i = indexes, v = values_up),
-                        x_name = "x_name"#,
-                        #y_name = "y_name"
-                        ))
-  expect_error(corr_col(x = tibble(i = indexes, n = values_nonnumeric),
-                        x = tibble(i = indexes, v = values_up),
-                        x_name = "x_name",
-                        y_name = "y_name"
-  ))
-  expect_error(corr_col(x = tibble(i = indexes, v = values_up),
-                        x = tibble(i = indexes, n = values_nonnumeric),
-                        x_name = "x_name",
-                        y_name = "y_name"
-  ))
+
+test_that("Argument checking for single data frame case",{
+
+  # `x` is not a data frame ------------------------------------------
+
+  expect_error(corr_col(x = "1")) # not a data frame
+  expect_error(corr_col(x = 1)) # not a data frame
+  expect_error(corr_col(x = c(1,2))) # not a data frame
+
+  # `x` has less than two numeric columns ------------------------------------------
+
+  expect_error(corr_col(x = data.frame()))
+  expect_error(corr_col(x = data.frame(values_up)))
+  expect_error(corr_col(x = data.frame(values_random)))
+  expect_error(corr_col(x = data.frame(values_nonnumeric)))
+  expect_error(corr_col(x = data.frame(values_up, values_nonnumeric)))
+
+  # `x` arguments as expected ------------------------------------------
+
+  expect_no_error(corr_col(x = data.frame(values_up, values_down, values_nonnumeric)))
+  expect_no_error(corr_col(x = data.frame(values_up, values_down)))
+  expect_no_error(corr_col(x = data.frame(values_up, values_up)))
+  expect_no_error(corr_col(x = data.frame(values_up, values_up, values_random)))
+  expect_no_error(corr_col(x = tibble(values_up, values_down)))
+
+})
+
+test_that("Result checking for single data frame case",{
+  expect_equal(corr_col(x = data.frame(values_up, values_up))$rho,1)
+  expect_equal(corr_col(x = data.frame(values_down, values_down))$rho,1)
+  expect_equal(corr_col(x = data.frame(values_up, values_up_na))$rho,1)
+  expect_equal(corr_col(x = data.frame(values_up, values_single))$rho,NA)
+  expect_equal(corr_col(x = data.frame(values_up, values_all_na))$rho,NA)
 })
