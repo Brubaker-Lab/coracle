@@ -4,10 +4,13 @@
 ## usethis namespace: start
 #' @import dplyr
 #' @import tidyr
-#' @importFrom magrittr %>%
 #' @import purrr
 #' @import tibble
+#' @import cli
+#' @importFrom magrittr %>%
+#' @importFrom rlang arg_match
 #' @importFrom stats p.adjust cor.test
-#' @import stringr
+#' @importFrom stringr str_replace
+#' @importFrom utils combn
 ## usethis namespace: end
 NULL

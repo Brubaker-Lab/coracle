@@ -1,82 +1,56 @@
-#' Correlate all columns of two data frames
+#' Correlation of columns for tidy data.
 #'
-#' @param x_data A data frame with at least one index column and at least one column of numeric data.
-#' @param y_data A data frame with at least one index column and at least one column of numeric data.
-#' @param ... Unused
-#' @param x_name A string identifying the type of data in `x_data`
-#' @param y_name A string identifying the type of data in `y_data`
-#' @param join_vars A named list of column names for joining, passed to `dplyr::inner_join()`'s `by` argument. See `dplyr` reference for information.
+#' @param x A tidy data.frame containing numeric data columns.
+#' @param y (Optional) A tidy data frame containing numeric data columns for pairwaise correlation with `x`.
+#' @param ... Unused.
+#' @param xy_join_vars (Optional) A character vector of variables to join `x` and `y`. Refer to the `by` argument of `dplyr::inner_join` for details.
+#' @param x_name (Optional) A character of length 1 to be used as the first column name.
+#' @param y_name (Optional) A character of length 1 to be used as the second column name.
+#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return A data frame of correlation results.
-#'
 #' @export
-corr_col <- function(x_data,
-                     y_data,
+#'
+#' @importFrom stringr str_replace
+corr_col <- function(x,
+                     y = NULL,
                      ...,
-                     x_name,
-                     y_name,
-                     join_vars = NULL) {
-  stopifnot("Error: x is not a data frame." = is.data.frame(x_data))
-  stopifnot("Error: y is not a data frame." = is.data.frame(y_data))
+                     xy_join_vars = NULL,
+                     x_name = "x",
+                     y_name = "y",
+                     method = "spearman") {
+  arg_match(method, c("pearson", "kendall", "spearman"))
 
-  stopifnot("Error: No string given for `x_name`." = is.character(x_name))
-  stopifnot("Error: No string given for `y_name`." = is.character(y_name))
+  # Two cases: x, xy
 
-  stopifnot("Error: x has no numeric data." = x_data %>%
-              dplyr::select(where(is.numeric)) %>%
-              ncol() > 0)
-  stopifnot("Error: y has no numeric data." = y_data %>%
-              select(where(is.numeric)) %>%
-              ncol() > 0)
+  if (is.null(y)) {
+    result <- corr_col_x(x = x,
+                         x_name = x_name,
+                         method = method) %>%
+      mutate(q = p.adjust(p, method = "fdr"))
+  } else {
+    cli_abort(c(
+      "Correlation with a second {.cls data.frame} {.var y} has not been implemented yet!"
+    ))
 
-  # find join variable(s) from x, y
+    result <- corr_col_xy(
+      x = x,
+      y = y,
+      xy_join_vars = xy_join_vars,
+      x_name = x_name,
+      y_name = y_name,
+      method = method
+    ) %>%
+      mutate(q = p.adjust(p, method = "fdr")) %>%
+      group_by(x) %>%
+      mutate(q_x = p.adjust(p, method = "fdr")) %>%
+      ungroup() %>%
+      group_by(y) %>%
+      mutate(q_y = p.adjust(p, method = "fdr")) %>%
+      ungroup()
+  }
 
-  xy_intersect <- intersect(names(x_data), names(y_data))
-  names(xy_intersect) <- intersect(names(x_data), names(y_data))
-
-  join_vars <- join_vars %||% xy_intersect
-
-  stopifnot(
-    "Error: No shared column found in x_data and y_data. Provide `join_vars`." = length(join_vars) > 0
-  )
-  message("Joining data by these columns. Provide `join_vars` to override.")
-  message(paste(
-    names(join_vars),
-    join_vars,
-    sep = " = ",
-    collapse = "\n"
-  ))
-
-  x_data_nested <- x_data %>%
-    select(all_of(join_vars), where(is.numeric)) %>%
-    nest(.by = names(join_vars), .key = "x_data")
-  y_data_nested <- y_data %>%
-    select(all_of(join_vars), where(is.numeric)) %>%
-    nest(.by = unname(join_vars), .key = "y_data")
-
-  data <- inner_join(x_data_nested, y_data_nested, by = join_vars)
-
-  x_vars <- names(x_data_nested$x_data[[1]])
-  y_vars <- names(y_data_nested$y_data[[1]])
-
-  stopifnot("Error: No data columns in x_data after join."  = length(x_vars) > 0)
-  stopifnot("Error: No data columns in y_data after join."  = length(y_vars) > 0)
-
-  corr_vars <- expand_grid(x_var = x_vars, y_var = y_vars)
-
-  map2(
-    .x = corr_vars$x_var,
-    .y = corr_vars$y_var,
-    .f = possibly(~ pairwise_corr(.x, .y, data))
-  ) %>%
-    list_rbind() %>%
-    mutate(q = p.adjust(p, method = "fdr")) %>%
-    group_by(x) %>%
-    mutate(q_x = p.adjust(p, method = "fdr")) %>%
-    ungroup() %>%
-    group_by(y) %>%
-    mutate(q_y = p.adjust(p, method = "fdr")) %>%
-    ungroup() %>%
+  result %>%
     rename_with(
       .fn = str_replace,
       .cols = contains("x"),
@@ -88,47 +62,103 @@ corr_col <- function(x_data,
       .cols = contains("y"),
       pattern = "y$",
       replacement = y_name
-    )
+    ) %>%
+    remove_rownames()
 
 }
 
-#' Internal function for calculation correlations
+#' (Internal) Single data frame (`x`) case of `corr_col()`
 #'
-#' @param x_var Column name string for correlation
-#' @param y_var Column name string for correlation
-#' @param data Data frame with join variables and nested data
+#' @param x A tidy data frame containing numeric data columns.
+#' @param x_name (Optional) A character of length 1 to be used as the first column name.
+#' @param ... Unused.
+#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
-#' @return Data frame row of correlation results
-pairwise_corr <- function(x_var, y_var, data) {
-  cor_data <- data %>%
-    hoist(x_data, x_col = x_var) %>%
-    hoist(y_data, y_col = y_var) %>%
-    select(x_col, y_col) %>%
-    drop_na()
+#' @return A data frame of correlation results.
+corr_col_x <- function(x, x_name, ..., method = "spearman") {
+  arg_match(method, c("pearson", "kendall", "spearman"))
+  arg_check_data(x, "x")
 
-  if (nrow(cor_data) > 2) {
-    suppressWarnings(corr <- cor.test(
-      x = cor_data[["x_col"]],
-      y = cor_data[["y_col"]],
-      method = "spearman",
+  corr_data <- x %>%
+    select(where(is.numeric))
+
+  if (ncol(corr_data) < 2)
+    cli_abort(c("{.var x} must have at least two numeric columns."))
+
+  corr_vars <- corr_data %>%
+    names() %>%
+    combn(x = ., m = 2) %>%
+    t() %>%
+    as_tibble(.name_repair = ~ vctrs::vec_as_names(..., repair = "unique", quiet = TRUE)) %>% # `vec_as_names` fn suppresses messages from `as_tibble()`
+    rename(var_1 = ...1, var_2 = ...2)
+
+  map2(.x = corr_vars$var_1,
+       .y = corr_vars$var_2,
+       .f = possibly(\(x, y) corr_x(x, y, corr_data, method))) %>%
+    list_rbind()
+
+}
+
+#' (Internal)Mapped correlation function for single data frame (`x`) case of `corr_col()`
+#'
+#' @param x A column name of `x` as a character of length 1
+#' @param y A column name of `x` as a character of length 1
+#' @param corr_data The data frame prepared from `x` for correlation
+#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
+#'
+#' @return The results of a single correlation as a data frame row.
+corr_x <- function(x, y, corr_data, method) {
+  arg_match(method, c("pearson", "kendall", "spearman"))
+
+  tryCatch({
+    cor_result <- cor.test(
+      x = corr_data[[x]],
+      y = corr_data[[y]],
+      method = method,
       exact = FALSE
+    )
+
+    return(cbind(
+      data.frame(x = x, y = y),
+      statistic(cor_result$estimate, method),
+      data.frame(p = cor_result$p.value, error = NA)
     ))
 
-    return(data.frame(
-      x = x_var,
-      y = y_var,
-      rho = corr$estimate,
-      p = corr$p.value,
-      n = nrow(cor_data)
+  }, warning = function(cond) {
+    return(cbind(
+      data.frame(x = x, y = y),
+      statistic(NA, method),
+      data.frame(p = NA, error = conditionMessage(cond))
     ))
+  }, error = function(cond) {
+    return(cbind(
+      data.frame(x = x, y = y),
+      statistic(NA, method),
+      data.frame(p = NA, error = conditionMessage(cond))
+    ))
+  })
+}
 
-  } else {
-    return(data.frame(
-      x = x_var,
-      y = y_var,
-      rho = NA,
-      p = NA,
-      n = nrow(cor_data)
-    ))
-  }
+
+#' (Internal) Two data frame (`x`, `y`) case of `corr_col()`
+#'
+#' @param x A tidy data frame containing numeric data columns.
+#' @param y A tidy data frame containing numeric data columns.
+#' @param ... Unused.
+#' @param xy_join_vars (Optional) A character vector of variables to join `x` and `y`. Refer to the `by` argument of `dplyr::inner_join` for details.
+#' @param x_name (Optional) A character of length 1 to be used as the first column name.
+#' @param y_name (Optional) A character of length 1 to be used as the second column name.
+#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
+#'
+#' @return A data frame of correlation results.
+corr_col_xy <- function(x,
+                        y,
+                        ...,
+                        xy_join_vars = NULL,
+                        x_name = "x",
+                        y_name = "y",
+                        method = "spearman") {
+  arg_match(method, c("pearson", "kendall", "spearman"))
+  arg_check_data(x, "x")
+  arg_check_data(y, "y")
 }
