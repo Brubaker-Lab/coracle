@@ -8,7 +8,7 @@ corr_col(
   x,
   y = NULL,
   ...,
-  xy_join_vars = NULL,
+  xy_join = NULL,
   x_name = "x",
   y_name = "y",
   method = "spearman"
@@ -17,11 +17,11 @@ corr_col(
 \arguments{
 \item{x}{A tidy data.frame containing numeric data columns.}
 
-\item{y}{(Optional) A tidy data frame containing numeric data columns for pairwaise correlation with \code{x}.}
+\item{y}{(Optional) A tidy data frame containing numeric data columns for pairwise correlation with \code{x}.}
 
 \item{...}{Unused.}
 
-\item{xy_join_vars}{(Optional) A character vector of variables to join \code{x} and \code{y}. Refer to the \code{by} argument of \code{dplyr::inner_join} for details.}
+\item{xy_join}{(Optional) A join specification for \code{x} and \code{y} constructed by \link[dplyr]{join_by}.}
 
 \item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
 

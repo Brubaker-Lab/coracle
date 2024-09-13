@@ -4,7 +4,7 @@
 \name{coracle-package}
 \alias{coracle}
 \alias{coracle-package}
-\title{coracle: Correlations for Columns of Data}
+\title{coracle: Correlations for Columns of Tidy Data}
 \description{
 Provices functions for correlating data stored in columns.
 }

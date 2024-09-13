@@ -8,7 +8,7 @@ corr_col_xy(
   x,
   y,
   ...,
-  xy_join_vars = NULL,
+  xy_join = NULL,
   x_name = "x",
   y_name = "y",
   method = "spearman"
@@ -21,7 +21,7 @@ corr_col_xy(
 
 \item{...}{Unused.}
 
-\item{xy_join_vars}{(Optional) A character vector of variables to join \code{x} and \code{y}. Refer to the \code{by} argument of \code{dplyr::inner_join} for details.}
+\item{xy_join}{(Optional) A join specification for \code{x} and \code{y} constructed by \link[dplyr]{join_by}.}
 
 \item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
 

@@ -10,6 +10,8 @@ pcor_col <- function(x,
                      method = "spearman") {
   # Two cases: x, xyz
 
+  cli_abort(c("{.fn coracle::pcor_col}` is still under development."))
+
 }
 
 pcor_col_x <- function(x,
