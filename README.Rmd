@@ -71,8 +71,42 @@ result
 Notes:
 
 -   Correlations are calculated for every combination of numeric columns.
--   Non numeric data (such as `index`) are excluded.
--   Correlations which could not be calculated return `NA` and a brief `error` description. 
+-   Non-numeric columns (such as `index`) are excluded.
+-   Correlations which could not be calculated return `NA` and a brief `message`. 
 
 
 ### Two Data Frames
+
+```{r}
+index <- c("A", "B", "C", "D", "E")
+up_values <- 1:5
+down_values <- 5:1
+random_values <- c(runif(5))
+missing_values <- c(NA, NA, NA, NA, 1)
+
+df1 <- data.frame(index,
+                 u1 = up_values,
+                 d1 = down_values,
+                 r1 = random_values)
+df2 <- data.frame(index,
+                 u2 = up_values,
+                 d2 = down_values,
+                 r2 = random_values)
+
+df1
+df2
+
+```
+
+```{r}
+library(coracle)
+
+result <- corr_col(x = df1, y = df2)
+
+result
+```
+
+Notes:
+
+- Every combination of a column from `x` and a column from `y` have their correlation calculated. No columns from `x` are correlated with other `x` columns and the same is true for `y`.
+- There are two additional `q` columns, `q_x` and `q_y` (the defaults), which are calculated per group of the `x` and `y` values respectively. If `x` or `y` are renamed with `x_name` or `y_name`, respectively, the `q_*` columns will be renamed to match.
