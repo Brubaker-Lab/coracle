@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-Correlations of Columns for Tidy Data >> "Corr" & "Col" >> "Coracle", a type of small boat.
+Correlations of Columns for Tidy Data \>\> "Corr" & "Col" \>\> "Coracle", a type of small boat.
 
 ## Installation
 
@@ -37,13 +37,25 @@ devtools::install_github("Brubaker-Lab/coracle")
 
 This may fail for a variety of reasons.
 
+## Loading
+
+After installation, load the library with:
+
+```{r}
+library(coracle)
+```
+
 ## Examples
 
-These functions are written to accommodate a few different cases.
+The two main functions of `coracle` (`corr_col()` and `pcor_col()`) are written to accommodate different cases depending on the inputs.
 
-### One Data Frame
+### One Data Frame (`x`)
 
-When `coracle` receives a single data frame (the required `x` argument) it does pairwise correlation between all pairs of numeric columns within that data frame. For example:
+When `corr_col()` receives a single data frame (the required `x` argument) it does *pairwise correlation between all pairs of numeric columns within that data frame*.
+
+Note: `pcor_col()` for one data frame has not been implemented yet.
+
+For example:
 
 ```{r}
 index <- c("A", "B", "C", "D", "E")
@@ -56,26 +68,23 @@ df <- data.frame(index, up_values, down_values, random_values, missing_values)
 
 df
 
+corr_col(x = df)
 ```
 
-Next we'll correlate that data frame with `coracle`:
-
-```{r}
-library(coracle)
-
-result <- corr_col(x = df)
-
-result
-```
-
-Notes:
+Note:
 
 -   Correlations are calculated for every combination of numeric columns.
 -   Non-numeric columns (such as `index`) are excluded.
--   Correlations which could not be calculated return `NA` and a brief `message`. 
+-   Correlations which could not be calculated return `NA` and a brief explanatory `message` (relayed from `stats::cor_test()`).
+-   False discovery rate (FDR) q-values are automatically calculated.
 
+### Two Data Frames (`x`, `y`)
 
-### Two Data Frames
+When `corr_col()` receives two data frames (the `x` and `y` arguments) it does *pairwise correlation between all pairs of numeric columns between the two data frames*.
+
+Note: `pcor_col()` does not accept two data frames. It requires either one or three data frames as input.
+
+For example:
 
 ```{r}
 index <- c("A", "B", "C", "D", "E")
@@ -96,17 +105,83 @@ df2 <- data.frame(index,
 df1
 df2
 
+corr_col(x = df1, y = df2)
 ```
+
+Observe:
+
+-   Every combination of a column from `x` and a column from `y` have their correlation calculated. No columns from `x` are correlated with other `x` columns. The same is true for `y`.
+    -   Since there are three numeric columns in each data frame above, there are 9 total combinations in the result.
+-   There are two additional FDR `q` columns: `q_x` and `q_y` (the default names). These are calculated *per grouping* of the `x` and `y` values, respectively. If `x` or `y` are renamed with `x_name` or `y_name` arguments, the `q_*` columns will be renamed to match.
+
+### Three Data Frames (`x`,`y`,`z`)
+
+Note: `pcor_col()` for three data frames has not been implemented yet.
+
+Note: `corr_col()` does not accept two data frames. It requires either one or two data frames as input.
+
+### Naming Outputs
+
+All `coracle` functions include `*_name` arguments to override the default column names ("x", "y", and "z") in the output.
+
+For example:
 
 ```{r}
-library(coracle)
+df1
+df2
 
-result <- corr_col(x = df1, y = df2)
-
-result
+corr_col(
+  x = df1,
+  y = df2,
+  x_name = "FIRST",
+  y_name = "SECOND"
+)
 ```
 
-Notes:
+Observe:
 
-- Every combination of a column from `x` and a column from `y` have their correlation calculated. No columns from `x` are correlated with other `x` columns and the same is true for `y`.
-- There are two additional `q` columns, `q_x` and `q_y` (the defaults), which are calculated per group of the `x` and `y` values respectively. If `x` or `y` are renamed with `x_name` or `y_name`, respectively, the `q_*` columns will be renamed to match.
+-   The `q_*` columns of the output have also been renamed.
+
+### Specifying Joins
+
+By default, all `coracle` functions which accept two or more data frames as input attempt to join the data frames by columns of the same name found in each data frame.
+
+For example:
+
+```{r}
+df1
+df2
+
+corr_col(x = df1, y = df2)
+```
+
+Observe:
+
+-   The function provides a message reporting on how the columns will be joined.
+
+In some scenarios, this default behavior is not desirable. For example:
+
+-   There may be one or more columns between the two data frames which share a name but would be inappropriate to use for joining.
+-   There are no columns between the two data frames which share names.
+
+To override this default behavior, provide a [`dplyr::join_by()` join specification](https://dplyr.tidyverse.org/reference/join_by.html) to the appropriate `xy_join` and/or `xz_join` argument.
+
+For example:
+
+```{r}
+
+library(dplyr)
+
+df1
+df2
+
+corr_col(x = df1,
+         y = df2,
+         xy_join = join_by(u1 == u2))
+```
+
+Observe:
+
+-   Columns used to join data frames are excluded from the calculations.
+    -   Since we joined by the "up" columns of each data frame (`u1` and `u2`), only the "down" (`d1`, `d2`) and "random" (`r1`, `r2`) columns are included in the result, for a total of 4 combinations.
+-   The `xy_join` argument expects the output of `dplyr::join_by()` which can be assigned to another variable which is passed to the function or done directly in the `coracle` function call (as shown).
