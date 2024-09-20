@@ -209,12 +209,12 @@ corr_col_xy <- function(x,
   x_vars <- corr_data %>%
     select(-(any_of(xy_join$x) | any_of(xy_join$y))) %>% # Subtract join vars
     select(-any_of(y_num_vars)) %>% # Subtract other data frame vars
-    janitor::remove_constant(quiet = F) %>% # Subtract constant data frame vars
+    janitor::remove_constant(na.rm = T, quiet = F) %>% # Subtract constant data frame vars
     names()
   y_vars <- corr_data %>%
     select(-(any_of(xy_join$x) | any_of(xy_join$y))) %>%
     select(-any_of(x_num_vars)) %>%
-    janitor::remove_constant(quiet = F) %>%
+    janitor::remove_constant(na.rm = T, quiet = F) %>%
     names()
 
   if (length(x_vars) == 0)
