@@ -50,13 +50,13 @@ corr_col <- function(x,
   result %>%
     rename_with(
       .fn = str_replace,
-      .cols = contains("x"),
+      .cols = matches("x$"),
       pattern = "x$",
       replacement = x_name
     ) %>%
     rename_with(
       .fn = str_replace,
-      .cols = contains("y"),
+      .cols = matches("y$"),
       pattern = "y$",
       replacement = y_name
     ) %>%
@@ -182,20 +182,40 @@ corr_col_xy <- function(x,
     )
   })
 
+  x_var_prefix = "x."
+  y_var_prefix = "y."
+
   x_data <- x %>%
     select(all_of(xy_join$x), where(is.numeric)) %>%
-    nest(.by = xy_join$x, .key = "x_data")
+    rename_with(.cols = -all_of(xy_join$x) & where(is.numeric),
+                .fn = \(x) paste0(x_var_prefix, x))
   y_data <- y %>%
     select(all_of(xy_join$y), where(is.numeric)) %>%
-    nest(.by = xy_join$y, .key = "y_data")
+    rename_with(.cols = -all_of(xy_join$y) & where(is.numeric),
+                .fn = \(x) paste0(y_var_prefix, x))
 
   corr_data <- inner_join(x_data, y_data, by = xy_join)
 
-  if (nrow(corr_data) == 0)
-    cli_abort(c("No observations remain after joining `x` and `y`."))
+  if (nrow(corr_data) < 3)
+    cli_abort(c("Too few observations remain after joining `x` and `y`."))
 
-  x_vars <- names(corr_data$x_data[[1]])
-  y_vars <- names(corr_data$y_data[[1]])
+  x_num_vars <- x_data %>%
+    select(-all_of(xy_join$x) & where(is.numeric)) %>%
+    names()
+  y_num_vars <- y_data %>%
+    select(-all_of(xy_join$y) & where(is.numeric)) %>%
+    names()
+
+  x_vars <- corr_data %>%
+    select(-(any_of(xy_join$x) | any_of(xy_join$y))) %>% # Subtract join vars
+    select(-any_of(y_num_vars)) %>% # Subtract other data frame vars
+    janitor::remove_constant(quiet = F) %>% # Subtract constant data frame vars
+    names()
+  y_vars <- corr_data %>%
+    select(-(any_of(xy_join$x) | any_of(xy_join$y))) %>%
+    select(-any_of(x_num_vars)) %>%
+    janitor::remove_constant(quiet = F) %>%
+    names()
 
   if (length(x_vars) == 0)
     cli_abort(c("No numeric columns from `x` remain after joining `x` and `y`."))
@@ -207,7 +227,10 @@ corr_col_xy <- function(x,
   map2(.x = corr_vars$var_x,
        .y = corr_vars$var_y,
        .f = possibly(\(var_x, var_y) corr_xy(var_x, var_y, corr_data, method))) %>%
-    list_rbind()
+    list_rbind() %>%
+    mutate(x = str_remove(x, paste0("^", x_var_prefix)),
+           y = str_remove(y, paste0("^", y_var_prefix)))
+
 
 }
 
@@ -222,23 +245,18 @@ corr_col_xy <- function(x,
 corr_xy <- function(var_x, var_y, corr_data, method) {
   arg_match(method, c("pearson", "kendall", "spearman"))
 
-  temp_data <- corr_data %>%
-    hoist(x_data, x_col = var_x) %>%
-    hoist(y_data, y_col = var_y) %>%
-    select(x_col, y_col)
-
   tryCatch({
-    cor_result <- cor.test(
-      x = temp_data[["x_col"]],
-      y = temp_data[["y_col"]],
+    corr_result <- cor.test(
+      x = corr_data[[var_x]],
+      y = corr_data[[var_y]],
       method = method,
       exact = FALSE
     )
 
     return(cbind(
       data.frame(x = var_x, y = var_y),
-      statistic(cor_result$estimate, method),
-      data.frame(p = cor_result$p.value, message = NA)
+      statistic(corr_result$estimate, method),
+      data.frame(p = corr_result$p.value, message = NA)
     ))
 
   }, warning = function(cond) {
