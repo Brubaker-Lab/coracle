@@ -7,6 +7,7 @@
 #' @import purrr
 #' @import tibble
 #' @import tidyr
+#' @importFrom ppcor pcor.test
 #' @importFrom janitor remove_constant
 #' @importFrom magrittr %>%
 #' @importFrom rlang arg_match

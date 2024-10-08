@@ -10,8 +10,6 @@
 #'
 #' @return A data frame of correlation results.
 #' @export
-#'
-#' @importFrom stringr str_replace
 corr_col <- function(x,
                      y = NULL,
                      ...,
