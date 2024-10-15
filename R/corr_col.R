@@ -17,6 +17,22 @@ corr_col <- function(x,
                      x_name = "x",
                      y_name = "y",
                      method = "spearman") {
+
+  # Check arguments ------------
+
+  arg_check_data(x)
+
+  if(!is.null(y)){
+    arg_check_data(y)
+  }
+
+  if(!is.null(xy_join) & !is.null(y)){
+
+  }
+
+  check_for_string(x_name)
+  check_for_string(y_name)
+
   arg_match(method, c("pearson", "kendall", "spearman"))
 
   # Two cases: x, xy
@@ -89,49 +105,9 @@ corr_col_x <- function(x, x_name, ..., method = "spearman") {
 
   map2(.x = corr_vars$var_x,
        .y = corr_vars$var_y,
-       .f = possibly(\(var_x, var_y) corr_x(var_x, var_y, corr_data, method))) %>%
+       .f = possibly(\(var_x, var_y) corr(var_x, var_y, corr_data, method))) %>%
     list_rbind()
 
-}
-
-#' (Internal)Mapped correlation function for single data frame (`x`) case of `corr_col()`
-#'
-#' @param var_x A column name of `x` as a character of length 1
-#' @param var_y A column name of `x` as a character of length 1
-#' @param corr_data The data frame prepared from `x` for correlation
-#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
-#'
-#' @return The results of a single correlation as a data frame row.
-corr_x <- function(var_x, var_y, corr_data, method) {
-  arg_match(method, c("pearson", "kendall", "spearman"))
-
-  tryCatch({
-    cor_result <- cor.test(
-      x = corr_data[[var_x]],
-      y = corr_data[[var_y]],
-      method = method,
-      exact = FALSE
-    )
-
-    return(cbind(
-      data.frame(x = var_x, y = var_y),
-      statistic(cor_result$estimate, method),
-      data.frame(p = cor_result$p.value, message = NA)
-    ))
-
-  }, warning = function(cond) {
-    return(cbind(
-      data.frame(x = var_x, y = var_y),
-      statistic(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
-    ))
-  }, error = function(cond) {
-    return(cbind(
-      data.frame(x = var_x, y = var_y),
-      statistic(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
-    ))
-  })
 }
 
 
@@ -184,11 +160,11 @@ corr_col_xy <- function(x,
   y_var_prefix = "y."
 
   x_data <- x %>%
-    select(all_of(xy_join$x), where(is.numeric)) %>%
+    select(any_of(xy_join$x), where(is.numeric)) %>%
     rename_with(.cols = -all_of(xy_join$x) & where(is.numeric),
                 .fn = \(x) paste0(x_var_prefix, x))
   y_data <- y %>%
-    select(all_of(xy_join$y), where(is.numeric)) %>%
+    select(any_of(xy_join$y), where(is.numeric)) %>%
     rename_with(.cols = -all_of(xy_join$y) & where(is.numeric),
                 .fn = \(x) paste0(y_var_prefix, x))
 
@@ -198,10 +174,10 @@ corr_col_xy <- function(x,
     cli_abort(c("Too few observations remain after joining `x` and `y`."))
 
   x_num_vars <- x_data %>%
-    select(-all_of(xy_join$x) & where(is.numeric)) %>%
+    select(-any_of(xy_join$x) & where(is.numeric)) %>%
     names()
   y_num_vars <- y_data %>%
-    select(-all_of(xy_join$y) & where(is.numeric)) %>%
+    select(-any_of(xy_join$y) & where(is.numeric)) %>%
     names()
 
   x_vars <- corr_data %>%
@@ -216,15 +192,15 @@ corr_col_xy <- function(x,
     names()
 
   if (length(x_vars) == 0)
-    cli_abort(c("No numeric columns from `x` remain after joining `x` and `y`."))
+    cli_abort(c("No non-constant numeric columns from {.arg x} remain after joining {.arg x} and {.arg y}."))
   if (length(y_vars) == 0)
-    cli_abort(c("No numeric columns from `y` remain after joining `x` and `y`."))
+    cli_abort(c("No non-constant numeric columns from {.arg y} remain after joining {.arg x} and {.arg y}."))
 
   corr_vars <- expand_grid(var_x = x_vars, var_y = y_vars)
 
   map2(.x = corr_vars$var_x,
        .y = corr_vars$var_y,
-       .f = possibly(\(var_x, var_y) corr_xy(var_x, var_y, corr_data, method))) %>%
+       .f = possibly(\(var_x, var_y) corr(var_x, var_y, corr_data, method))) %>%
     list_rbind() %>%
     mutate(x = str_remove(x, paste0("^", x_var_prefix)),
            y = str_remove(y, paste0("^", y_var_prefix)))
@@ -232,7 +208,7 @@ corr_col_xy <- function(x,
 
 }
 
-#' (Internal)Mapped correlation function fort two data frame (`x`, `y`) case of `corr_col()`
+#' (Internal)Mapped correlation function for `corr_col()`
 #'
 #' @param var_x A column name of `x` as a character of length 1
 #' @param var_y A column name of `x` as a character of length 1
@@ -240,7 +216,7 @@ corr_col_xy <- function(x,
 #' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return The results of a single correlation as a data frame row.
-corr_xy <- function(var_x, var_y, corr_data, method) {
+corr <- function(var_x, var_y, corr_data, method) {
   arg_match(method, c("pearson", "kendall", "spearman"))
 
   tryCatch({
@@ -257,12 +233,6 @@ corr_xy <- function(var_x, var_y, corr_data, method) {
       data.frame(p = corr_result$p.value, message = NA)
     ))
 
-  }, warning = function(cond) {
-    return(cbind(
-      data.frame(x = var_x, y = var_y),
-      statistic(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
-    ))
   }, error = function(cond) {
     return(cbind(
       data.frame(x = var_x, y = var_y),
