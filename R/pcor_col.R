@@ -114,53 +114,6 @@ pcor_col_x <- function(x,
 }
 
 
-#' (Internal) Mapped partial correlation function for `pcor_col()`
-#'
-#' @param var_x A column name of `pcor_data` as a character of length 1.
-#' @param var_y A column name of `pcor_data` as a character of length 1.
-#' @param var_z A list of column names of `pcor_data`.
-#' @param pcor_data The data prepare for partial correlation.
-#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
-#'
-#' @return The results of a single partial correlation as a data frame row.
-pcor <- function(var_x, var_y, var_z, pcor_data, method) {
-  arg_match(method, c("pearson", "kendall", "spearman"))
-
-  temp_data <- pcor_data[, c(var_x, var_y, var_z)] %>%
-    drop_na()
-
-  tryCatch({
-    pcor_result <- ppcor::pcor.test(
-      x = temp_data[var_x],
-      y = temp_data[var_y],
-      z = temp_data[, var_z],
-      method = method
-    )
-
-    return(cbind(
-      tibble(
-        x = var_x,
-        y = var_y,
-        z = list(var_z)
-      ),
-      statistic(pcor_result$estimate, method),
-      tibble(p = pcor_result$p.value, message = NA)
-    ))
-
-  }, error = function(cond) {
-    return(cbind(
-      tibble(
-        x = var_x,
-        y = var_y,
-        z = list(var_z)
-      ),
-      statistic(NA, method),
-      tibble(p = NA, message = conditionMessage(cond))
-    ))
-  })
-
-}
-
 #' (Internal) Three data frame (`x`, `y`, `z`) case of `pcor_col()`
 #'
 #' @param x A tidy data frame containing numeric data columns.
@@ -299,15 +252,15 @@ pcor_col_xyz <- function(x,
 
   if (length(x_vars) == 0)
     cli_abort(c(
-      "No numeric columns from {.arg x} remain after joining {.arg x} and {.arg y}."
+      "No non-constant numeric columns from {.arg x} remain after joining {.arg x} and {.arg y}."
     ))
   if (length(y_vars) == 0)
     cli_abort(c(
-      "No numeric columns from {.arg y} remain after joining {.arg x} and {.arg y}."
+      "No non-constant numeric columns from {.arg y} remain after joining {.arg x} and {.arg y}."
     ))
   if (length(z_vars) == 0)
     cli_abort(c(
-      "No numeric columns from {.arg z} remain after joining {.arg x} and {.arg z}."
+      "No non-constant numeric columns from {.arg z} remain after joining {.arg x} and {.arg z}."
     ))
 
   pcor_vars <- expand_grid(var_x = x_vars, var_y = y_vars) %>%
@@ -320,4 +273,51 @@ pcor_col_xyz <- function(x,
       y = str_remove(y, paste0("^", y_var_prefix)),
       z = str_remove(z, paste0("^", z_var_prefix))
     )
+}
+
+#' (Internal) Mapped partial correlation function for `pcor_col()`
+#'
+#' @param var_x A column name of `pcor_data` as a character of length 1.
+#' @param var_y A column name of `pcor_data` as a character of length 1.
+#' @param var_z A list of column names of `pcor_data`.
+#' @param pcor_data The data prepare for partial correlation.
+#' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
+#'
+#' @return The results of a single partial correlation as a data frame row.
+pcor <- function(var_x, var_y, var_z, pcor_data, method) {
+  arg_match(method, c("pearson", "kendall", "spearman"))
+
+  temp_data <- pcor_data[, c(var_x, var_y, var_z)] %>%
+    drop_na()
+
+  tryCatch({
+    pcor_result <- ppcor::pcor.test(
+      x = temp_data[var_x],
+      y = temp_data[var_y],
+      z = temp_data[, var_z],
+      method = method
+    )
+
+    return(cbind(
+      tibble(
+        x = var_x,
+        y = var_y,
+        z = list(var_z)
+      ),
+      statistic(pcor_result$estimate, method),
+      tibble(p = pcor_result$p.value, message = NA)
+    ))
+
+  }, error = function(cond) {
+    return(cbind(
+      tibble(
+        x = var_x,
+        y = var_y,
+        z = list(var_z)
+      ),
+      statistic(NA, method),
+      tibble(p = NA, message = conditionMessage(cond))
+    ))
+  })
+
 }

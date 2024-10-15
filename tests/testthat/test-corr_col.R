@@ -1,58 +1,120 @@
-indexes <- c("a", "b", "c", "d", "e")
-indexes_alt <- c("c", "d", "e", "f", "g")
-values_up <- c(1, 2, 3, 4, 5)
-values_down <- c(5, 4, 3, 2, 1)
-values_constant <- c(1, 1, 1, 1, 1)
-values_up_na <- c(1, 2, 3, NA, 5)
-values_dn_na <- c(5, NA, 3, 2, 1)
-values_all_na <- as.numeric(c(NA, NA, NA, NA, NA))
-values_single <- c(NA, NA, 3, NA, NA)
-values_nonnumeric <- c("a", "b", "c", "d", "e")
-values_random <- c(runif(5))
+set.seed(123)
 
-# Single data frame `x` ------------------------------------------
+index <- c("a", "b", "c", "d", "e")
+up <- c(1, 2, 3, 4, 5)
+down <- c(5, 4, 3, 2, 1)
+constant <- c(1, 1, 1, 1, 1)
+up_with_na <- c(1, 2, 3, NA, 5)
+down_with_na <- c(5, NA, 3, 2, 1)
+all_na <- as.numeric(c(NA, NA, NA, NA, NA))
+all_na_but_one <- c(NA, NA, 3, NA, NA)
+nonnumeric <- c("a", "b", "c", "d", "e")
+random <- c(runif(5))
 
-test_that("Argument checking for single data frame",{
+test_that("corr_col() for one data frame", {
+  expect_true(exists("corr_col")) # Prevents "Empty Test" warning
 
-  # `x` is not a data frame ------------------------------------------
+  f <- corr_col
 
-  expect_error(corr_col(x = "1")) # not a data frame
-  expect_error(corr_col(x = 1)) # not a data frame
-  expect_error(corr_col(x = c(1,2))) # not a data frame
+  test_that("expected inputs throw no errors", {
+    expect_no_error(f(x = data.frame(up, down, nonnumeric)))
+    expect_no_error(f(x = data.frame(up, down)))
+    expect_no_error(f(x = data.frame(up, up)))
+    expect_no_error(f(x = data.frame(up, up, random)))
+    expect_no_error(f(x = tibble(up, down)))
+  })
+  test_that("expected inputs give correct results", {
+    expect_equal(f(x = data.frame(up, up))$rho, 1)
+    expect_equal(f(x = data.frame(down, down))$rho, 1)
+    expect_equal(f(x = data.frame(up, up_with_na))$rho, 1)
+    expect_equal(f(x = data.frame(up, all_na_but_one))$rho, NA)
+    expect_equal(f(x = data.frame(up, all_na))$rho, NA)
+  })
+  test_that("expected inputs snapshots", {
+    expect_snapshot(f(x = data.frame(up, down, random, constant, nonnumeric)))
 
-  # `x` has less than two numeric columns ------------------------------------------
+  })
+  test_that("erroneous inputs", {
+    # Not data frames
 
-  expect_error(corr_col(x = data.frame()))
-  expect_error(corr_col(x = data.frame(values_up)))
-  expect_error(corr_col(x = data.frame(values_random)))
-  expect_error(corr_col(x = data.frame(values_nonnumeric)))
-  expect_error(corr_col(x = data.frame(values_up, values_nonnumeric)))
+    expect_error(f(x = "1")) # not a data frame
+    expect_error(f(x = 1)) # not a data frame
+    expect_error(f(x = c(1, 2))) # not a data frame
 
-  # `x` arguments as expected ------------------------------------------
+    # Less than two numeric columns
 
-  expect_no_error(corr_col(x = data.frame(values_up, values_down, values_nonnumeric)))
-  expect_no_error(corr_col(x = data.frame(values_up, values_down)))
-  expect_no_error(corr_col(x = data.frame(values_up, values_up)))
-  expect_no_error(corr_col(x = data.frame(values_up, values_up, values_random)))
-  expect_no_error(corr_col(x = tibble(values_up, values_down)))
-
+    expect_error(f(x = data.frame()))
+    expect_error(f(x = data.frame(up)))
+    expect_error(f(x = data.frame(random)))
+    expect_error(f(x = data.frame(nonnumeric)))
+    expect_error(f(x = data.frame(up, nonnumeric)))
+  })
 })
 
-test_that("Result checking for single data frame",{
-  expect_equal(corr_col(x = data.frame(values_up, values_up))$rho,1)
-  expect_equal(corr_col(x = data.frame(values_down, values_down))$rho,1)
-  expect_equal(corr_col(x = data.frame(values_up, values_up_na))$rho,1)
-  expect_equal(corr_col(x = data.frame(values_up, values_single))$rho,NA)
-  expect_equal(corr_col(x = data.frame(values_up, values_all_na))$rho,NA)
-})
+test_that("corr_col() for two data frames", {
+  expect_true(exists("corr_col")) # Prevents "Empty Test" warning
 
-# Two data frames `x`, `y` ------------------------------------------
+  f <- suppressMessages(corr_col)
 
-test_that("Argument checking for two data frames",{
+  test_that("expected inputs for joining", {
+    expect_no_error(f(
+      x = data.frame(index, up),
+      y = data.frame(index, up),
+      xy_join = join_by(index)
+    )) # Join specification for columns with the same name
+    expect_no_error(f(
+      x = data.frame(i1 = index, up),
+      y = data.frame(i2 = index, up),
+      xy_join = join_by(i1 == i2)
+    )) # Join specification for columns which don't have the same name
+    expect_no_error(f(
+      x = data.frame(i1 = index, index, up),
+      y = data.frame(i2 = index, index, up),
+      xy_join = join_by(i1 == i2)
+    )) # Join specification for columns which don't have the same name, excluding columns with the same name
 
-  # `y` is not a data frame ------------------------------------------
+  })
 
-  expect_error(corr_col(x = data.frame(values_up), y = data.frame(values_up))) # not a data frame
-  expect_error(corr_col(x = 1)) # not a data frame
-  expect_error(corr_col(x = c(1,2))) # not a data frame
+  test_that("expected inputs give correct results", {
+    expect_equal(f(
+      x = data.frame(index, u1 = up), y = data.frame(index, u2 = up)
+    )$rho, 1)
+    expect_equal(f(
+      x = data.frame(index, d1 = down),
+      y = data.frame(index, d2 = down)
+    )$rho, 1)
+    expect_equal(f(
+      x = data.frame(index, up), y = data.frame(index, down)
+    )$rho, -1)
+    expect_equal(f(
+      x = data.frame(index, down), y = data.frame(index, up)
+    )$rho, -1)
+    expect_equal(f(
+      x = data.frame(index, up),
+      y = data.frame(index, up_with_na)
+    )$rho, 1)
+    expect_equal(f(
+      x = data.frame(index, up),
+      y = data.frame(index, down_with_na)
+    )$rho, -1)
+  })
+  #
+  # test_that("expected inputs snapshots", {
+  # })
+
+  test_that("erroneous inputs for joining", {
+    expect_error(f(x = data.frame(up), y = data.frame(up))) # Only column used for joining
+    expect_error(f(
+      x = data.frame(indexes, up), y = data.frame(indexes, up, down)
+    )) # All columns in x used for joining
+    expect_error(f(
+      x = data.frame(indexes, up, down), y = data.frame(indexes, up)
+    )) # All columns in y used for joining
+  })
+
+  test_that("erroneous inputs", {
+    expect_error(f(x = data.frame(up), y = up)) # not a data frame
+
+  })
+
 })
