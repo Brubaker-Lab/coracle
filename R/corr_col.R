@@ -17,6 +17,7 @@ corr_col <- function(x,
                      x_name = "x",
                      y_name = "y",
                      method = "spearman") {
+
   # Check arguments ------------
 
   check_data(x)
@@ -164,17 +165,9 @@ corr_col_xy <- function(x, y, xy_join = NULL, method) {
     names()
 
   if (length(x_vars) == 0)
-    cli_abort(
-      c(
-        "No non-constant numeric columns from {.arg x} remain after joining {.arg x} and {.arg y}."
-      )
-    )
+    cli_abort(c("No non-constant numeric columns from {.arg x} remain after joining {.arg x} and {.arg y}."))
   if (length(y_vars) == 0)
-    cli_abort(
-      c(
-        "No non-constant numeric columns from {.arg y} remain after joining {.arg x} and {.arg y}."
-      )
-    )
+    cli_abort(c("No non-constant numeric columns from {.arg y} remain after joining {.arg x} and {.arg y}."))
 
   corr_vars <- expand_grid(var_x = x_vars, var_y = y_vars)
 
@@ -200,6 +193,7 @@ corr_col_xy <- function(x, y, xy_join = NULL, method) {
 #'
 #' @return The results of a single correlation as a data frame row.
 corr <- function(var_x, var_y, corr_data, method) {
+
   tryCatch({
     corr_result <- cor.test(
       x = corr_data[[var_x]],
