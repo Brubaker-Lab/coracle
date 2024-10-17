@@ -262,8 +262,6 @@ pcor <- function(var_x, var_y, var_z, pcor_data, method) {
       method = method
     ))
 
-    print(pcor_result)
-
     return(cbind(
       data.frame(
         x = var_x,
