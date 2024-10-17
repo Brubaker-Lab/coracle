@@ -4,18 +4,7 @@
 \alias{pcor_col_xyz}
 \title{(Internal) Three data frame (\code{x}, \code{y}, \code{z}) case of \code{pcor_col()}}
 \usage{
-pcor_col_xyz(
-  x,
-  y,
-  z,
-  ...,
-  xy_join = NULL,
-  xz_join = NULL,
-  x_name = "x",
-  y_name = "y",
-  z_name = "z",
-  method = "spearman"
-)
+pcor_col_xyz(x, y, z, xy_join, xz_join, method = "spearman")
 }
 \arguments{
 \item{x}{A tidy data frame containing numeric data columns.}
@@ -24,17 +13,9 @@ pcor_col_xyz(
 
 \item{z}{A tidy data frame containing numeric data columns.}
 
-\item{...}{Unused.}
-
 \item{xy_join}{(Optional) A join specification for \code{x} and \code{y} constructed by \link[dplyr]{join_by}.}
 
 \item{xz_join}{(Optional) A join specification for \code{x} and \code{z} constructed by \link[dplyr]{join_by}.}
-
-\item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
-
-\item{y_name}{(Optional) A character of length 1 to be used as the second column name.}
-
-\item{z_name}{(Optional) A character of length 1 to be used as the third column name.}
 
 \item{method}{(Optional) A character of length 1 indicating which correlation coefficient is to be used: \code{"spearman"} (the default), \code{"pearson"}, or \code{"kendall"}.}
 }

@@ -7,11 +7,11 @@
 corr(var_x, var_y, corr_data, method)
 }
 \arguments{
-\item{var_x}{A column name of \code{x} as a character of length 1}
+\item{var_x}{A column name of \code{corr_data} as a character of length 1}
 
-\item{var_y}{A column name of \code{x} as a character of length 1}
+\item{var_y}{A column name of \code{corr_data} as a character of length 1}
 
-\item{corr_data}{The data frame prepared from \code{x} for correlation}
+\item{corr_data}{The data frame prepared for correlation}
 
 \item{method}{(Optional) A character of length 1 indicating which correlation coefficient is to be used: \code{"spearman"} (the default), \code{"pearson"}, or \code{"kendall"}.}
 }

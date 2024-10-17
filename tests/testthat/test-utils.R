@@ -8,7 +8,6 @@ test_that("check_data()", {
   test_that("expected inputs", {
     expect_no_error(f(data.frame(x = 1:5)))
     expect_no_error(f(tibble(x = 1:5)))
-    expect_no_error(f(data.table::data.table(x = 1:5)))
     expect_no_error(f(mtcars))
   })
 
@@ -24,9 +23,6 @@ test_that("check_data()", {
       x = c("a"), y = as.character(1:5)
     )))
     expect_error(f(tibble(
-      x = c("a"), y = as.character(1:5)
-    )))
-    expect_error(f(data.table(
       x = c("a"), y = as.character(1:5)
     )))
     expect_error(f(data.frame(
@@ -185,6 +181,11 @@ test_that("check_join()", {
       x = data.frame(i, a, c),
       y = data.frame(i, a, b),
       join = join_by(z == i)
+    ))
+    expect_error(f(
+      x = data.frame(i, a, c),
+      y = data.frame(i, a, b),
+      join = "a"
     ))
   })
 })

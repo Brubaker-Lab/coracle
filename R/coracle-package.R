@@ -10,7 +10,8 @@
 #' @importFrom ppcor pcor.test
 #' @importFrom janitor remove_constant
 #' @importFrom magrittr %>%
-#' @importFrom rlang arg_match
+#' @importFrom methods is
+#' @importFrom rlang arg_match is_string caller_env caller_arg
 #' @importFrom stats p.adjust cor.test
 #' @importFrom stringr str_replace str_remove
 #' @importFrom utils combn

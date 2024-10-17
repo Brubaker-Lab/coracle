@@ -1,6 +1,6 @@
 Package: coracle
 Title: Correlations for Columns of Tidy Data
-Version: 0.0.0.93
+Version: 0.0.1
 Authors@R:
     person("Ray", "Krajci", , "rdk54@case.edu", role = c("aut", "cre"))
 Description: Provices functions for correlating data stored in columns.
@@ -16,6 +16,7 @@ Imports:
     dplyr,
     janitor,
     magrittr,
+    methods,
     ppcor,
     purrr,
     rlang,

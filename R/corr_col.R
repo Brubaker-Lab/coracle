@@ -3,13 +3,34 @@
 #' @param x A tidy data.frame containing numeric data columns.
 #' @param y (Optional) A tidy data frame containing numeric data columns for pairwise correlation with `x`.
 #' @param ... Unused.
-#' @param xy_join (Optional) A join specification for `x` and `y` constructed by \link[dplyr]{join_by}.
+#' @param xy_join (Optional) A \code{\link[dplyr]{join_by}} join specification for `x` and `y`.
 #' @param x_name (Optional) A character of length 1 to be used as the first column name.
 #' @param y_name (Optional) A character of length 1 to be used as the second column name.
 #' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return A data frame of correlation results.
 #' @export
+#' @examples
+#'
+#' # Single data frame
+#' x <- data.frame(i = as.character(1:5), ux = 1:5, dx = 5:1)
+#' corr_col(x)
+#'
+#' # Data frames with a shared column, "i"
+#' x <- data.frame(i = as.character(1:5), ux = 1:5, dx = 5:1)
+#' y <- data.frame(i = as.character(1:5), uy = 1:5, dy = 5:1)
+#' corr_col(x, y)
+#'
+#' # Data frames without a shared column
+#' x <- data.frame(ix= as.character(1:5), ux = 1:5, dx = 5:1)
+#' y <- data.frame(iy = as.character(1:5), uy = 1:5, dy = 5:1)
+#' corr_col(x, y, xy_join = dplyr::join_by(ix == iy))
+#'
+#' # Renaming the outputs
+#' x <- data.frame(i= as.character(1:5), ux = 1:5, dx = 5:1)
+#' y <- data.frame(i = as.character(1:5), uy = 1:5, dy = 5:1)
+#' corr_col(x,y, x_name = "first", y_name = "second")
+#'
 corr_col <- function(x,
                      y = NULL,
                      ...,
@@ -62,8 +83,6 @@ corr_col <- function(x,
 #' (Internal) Single data frame (`x`) case of `corr_col()`
 #'
 #' @param x A tidy data frame containing numeric data columns.
-#' @param x_name (Optional) A character of length 1 to be used as the first column name.
-#' @param ... Unused.
 #' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return A data frame of correlation results.
@@ -93,14 +112,12 @@ corr_col_x <- function(x, method) {
 #'
 #' @param x A tidy data frame containing numeric data columns.
 #' @param y A tidy data frame containing numeric data columns.
-#' @param ... Unused.
 #' @param xy_join (Optional) A join specification for `x` and `y` constructed by \link[dplyr]{join_by}.
-#' @param x_name (Optional) A character of length 1 to be used as the first column name.
-#' @param y_name (Optional) A character of length 1 to be used as the second column name.
 #' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return A data frame of correlation results.
 corr_col_xy <- function(x, y, xy_join = NULL, method) {
+
   if (is.null(xy_join)) {
     xy_join$x <- intersect(names(x), names(y))
     xy_join$y <- intersect(names(x), names(y))
@@ -186,9 +203,9 @@ corr_col_xy <- function(x, y, xy_join = NULL, method) {
 
 #' (Internal)Mapped correlation function for `corr_col()`
 #'
-#' @param var_x A column name of `x` as a character of length 1
-#' @param var_y A column name of `x` as a character of length 1
-#' @param corr_data The data frame prepared from `x` for correlation
+#' @param var_x A column name of `corr_data` as a character of length 1
+#' @param var_y A column name of `corr_data` as a character of length 1
+#' @param corr_data The data frame prepared for correlation
 #' @param method (Optional) A character of length 1 indicating which correlation coefficient is to be used: `"spearman"` (the default), `"pearson"`, or `"kendall"`.
 #'
 #' @return The results of a single correlation as a data frame row.

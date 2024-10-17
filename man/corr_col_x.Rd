@@ -4,14 +4,10 @@
 \alias{corr_col_x}
 \title{(Internal) Single data frame (\code{x}) case of \code{corr_col()}}
 \usage{
-corr_col_x(x, x_name, ..., method = "spearman")
+corr_col_x(x, method)
 }
 \arguments{
 \item{x}{A tidy data frame containing numeric data columns.}
-
-\item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
-
-\item{...}{Unused.}
 
 \item{method}{(Optional) A character of length 1 indicating which correlation coefficient is to be used: \code{"spearman"} (the default), \code{"pearson"}, or \code{"kendall"}.}
 }
