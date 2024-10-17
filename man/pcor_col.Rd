@@ -6,8 +6,8 @@
 \usage{
 pcor_col(
   x,
-  y = NULL,
-  z = NULL,
+  y,
+  z,
   ...,
   xy_join = NULL,
   xz_join = NULL,
@@ -24,11 +24,11 @@ pcor_col(
 
 \item{z}{(Optional) A tidy data frame containing numeric data columns to use as covariates.}
 
-\item{...}{Unused}
+\item{...}{Unused.}
 
-\item{xy_join}{(Optional) A join specification for \code{x} and \code{y} constructed by \link[dplyr]{join_by}.}
+\item{xy_join}{(Optional) A \code{\link[dplyr]{join_by}} join specification for \code{x} and \code{y}.}
 
-\item{xz_join}{(Optional) A join specification for \code{x} and \code{z} constructed by \link[dplyr]{join_by}.}
+\item{xz_join}{(Optional) A \code{\link[dplyr]{join_by}} join specification for \code{x} and \code{z}.}
 
 \item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
 
@@ -43,4 +43,25 @@ A data frame of partial correlation results.
 }
 \description{
 Partial correlation of columns for tidy data.
+}
+\examples{
+
+# Data frames with a shared column, "i"
+x <- data.frame(i = as.character(1:5), ux = 1:5, dx = 5:1)
+y <- data.frame(i = as.character(1:5), uy = 1:5, dy = 5:1)
+z <- data.frame(i = as.character(1:5), rz = runif(5))
+corr_col(x, y, z)
+
+# Data frames without a shared column
+x <- data.frame(ix= as.character(1:5), ux = 1:5, dx = 5:1)
+y <- data.frame(iy = as.character(1:5), uy = 1:5, dy = 5:1)
+z <- data.frame(iz = as.character(1:5), rz = runif(5))
+corr_col(x, y,xy_join = dplyr::join_by(ix == iy), xz_join = dplyr::join_by(ix == iz))
+
+# Renaming the outputs
+x <- data.frame(i = as.character(1:5), ux = 1:5, dx = 5:1)
+y <- data.frame(i = as.character(1:5), uy = 1:5, dy = 5:1)
+z <- data.frame(i = as.character(1:5), rz = runif(5))
+pcor_col(x,y,z, x_name = "first", y_name = "second", z_name = "third")
+
 }

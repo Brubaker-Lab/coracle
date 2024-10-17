@@ -4,28 +4,14 @@
 \alias{corr_col_xy}
 \title{(Internal) Two data frame (\code{x}, \code{y}) case of \code{corr_col()}}
 \usage{
-corr_col_xy(
-  x,
-  y,
-  ...,
-  xy_join = NULL,
-  x_name = "x",
-  y_name = "y",
-  method = "spearman"
-)
+corr_col_xy(x, y, xy_join = NULL, method)
 }
 \arguments{
 \item{x}{A tidy data frame containing numeric data columns.}
 
 \item{y}{A tidy data frame containing numeric data columns.}
 
-\item{...}{Unused.}
-
 \item{xy_join}{(Optional) A join specification for \code{x} and \code{y} constructed by \link[dplyr]{join_by}.}
-
-\item{x_name}{(Optional) A character of length 1 to be used as the first column name.}
-
-\item{y_name}{(Optional) A character of length 1 to be used as the second column name.}
 
 \item{method}{(Optional) A character of length 1 indicating which correlation coefficient is to be used: \code{"spearman"} (the default), \code{"pearson"}, or \code{"kendall"}.}
 }
