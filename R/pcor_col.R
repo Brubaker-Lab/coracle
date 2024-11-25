@@ -269,7 +269,9 @@ pcor <- function(var_x, var_y, var_z, pcor_data, method) {
         z = NA
       ),
       statistic_column(pcor_result$estimate, method),
-      data.frame(p = pcor_result$p.value, message = NA)
+      data.frame(p = pcor_result$p.value,
+                 n = nrow(temp_data),
+                 message = NA)
     ))
 
   }, warning = function(cond) {
@@ -281,7 +283,9 @@ pcor <- function(var_x, var_y, var_z, pcor_data, method) {
         z = NA
       ),
       statistic_column(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
+      data.frame(p = NA,
+                 n = nrow(temp_data),
+                 message = conditionMessage(cond))
     ))
   }, error = function(cond) {
 
@@ -292,7 +296,9 @@ pcor <- function(var_x, var_y, var_z, pcor_data, method) {
         z = NA
       ),
       statistic_column(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
+      data.frame(p = NA,
+                 n = nrow(temp_data),
+                 message = conditionMessage(cond))
     ))
   })
 

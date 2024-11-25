@@ -29,6 +29,7 @@ test_that("corr_col() for one data frame", {
     expect_equal(suppressMessages(f(x = data.frame(up, up)))$rho, 1)
     expect_equal(suppressMessages(f(x = data.frame(down, down)))$rho, 1)
     expect_equal(suppressMessages(f(x = data.frame(up, up_with_na)))$rho, 1)
+    expect_equal(suppressMessages(f(x = data.frame(up, up_with_na)))$n, 4)
     expect_equal(suppressMessages(f(x = data.frame(
       up, all_na_but_one
     )))$rho, NA)

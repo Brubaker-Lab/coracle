@@ -211,10 +211,13 @@ corr_col_xy <- function(x, y, xy_join = NULL, method) {
 #' @return The results of a single correlation as a data frame row.
 corr <- function(var_x, var_y, corr_data, method) {
 
+  temp_data <- corr_data[, c(var_x, var_y)] %>%
+    drop_na()
+
   tryCatch({
     corr_result <- cor.test(
-      x = corr_data[[var_x]],
-      y = corr_data[[var_y]],
+      x = temp_data[, var_x],
+      y = temp_data[, var_y],
       method = method,
       exact = FALSE
     )
@@ -222,19 +225,27 @@ corr <- function(var_x, var_y, corr_data, method) {
     return(cbind(
       data.frame(x = var_x, y = var_y),
       statistic_column(corr_result$estimate, method),
-      data.frame(p = corr_result$p.value, message = NA)
+      data.frame(p = corr_result$p.value,
+                 n = nrow(temp_data),
+                 message = NA)
     ))
   }, warning = function(cond) {
     return(cbind(
-      data.frame(x = var_x, y = var_y),
+      data.frame(x = var_x,
+                 y = var_y),
       statistic_column(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
+      data.frame(p = NA,
+                 n = nrow(temp_data),
+                 message = conditionMessage(cond))
     ))
   }, error = function(cond) {
     return(cbind(
-      data.frame(x = var_x, y = var_y),
+      data.frame(x = var_x,
+                 y = var_y),
       statistic_column(NA, method),
-      data.frame(p = NA, message = conditionMessage(cond))
+      data.frame(p = NA,
+                 n = nrow(temp_data),
+                 message = conditionMessage(cond))
     ))
   })
 

@@ -49,26 +49,21 @@ library(coracle)
 
 The two main functions of `coracle` (`corr_col()` and `pcor_col()`) are written to accommodate different cases depending on the inputs.
 
-### One Data Frame (`x`)
+### One Data Frame (`corr_col()`)
 
 When `corr_col()` receives a single data frame (the required `x` argument) it does *pairwise correlation between all pairs of numeric columns within that data frame*.
 
-Note: `pcor_col()` for one data frame has not been implemented yet.
+Note: `pcor_col()` does not accept a single data frame.
 
 For example:
 
 ```{r}
-index <- c("A", "B", "C", "D", "E")
-up_values <- 1:5
-down_values <- 5:1
-random_values <- c(runif(5))
-missing_values <- c(NA, NA, NA, NA, 1)
+dfx <- data.frame(i = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
 
-df <- data.frame(index, up_values, down_values, random_values, missing_values)
-
-df
-
-corr_col(x = df)
+corr_col(x = dfx)
 ```
 
 Note:
@@ -78,34 +73,23 @@ Note:
 -   Correlations which could not be calculated return `NA` and a brief explanatory `message` (relayed from `stats::cor_test()`).
 -   False discovery rate (FDR) q-values are automatically calculated.
 
-### Two Data Frames (`x`, `y`)
+### Two Data Frames (`corr_col()`)
 
 When `corr_col()` receives two data frames (the `x` and `y` arguments) it does *pairwise correlation between all pairs of numeric columns between the two data frames*.
-
-Note: `pcor_col()` does not accept two data frames. It requires either one or three data frames as input.
 
 For example:
 
 ```{r}
-index <- c("A", "B", "C", "D", "E")
-up_values <- 1:5
-down_values <- 5:1
-random_values <- c(runif(5))
-missing_values <- c(NA, NA, NA, NA, 1)
+dfx <- data.frame(i = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
+dfy <- data.frame(i = as.character(1:5),
+                  up_y = 1:5,
+                  down_y = 5:1,
+                  rand_y = runif(5))
 
-df1 <- data.frame(index,
-                 u1 = up_values,
-                 d1 = down_values,
-                 r1 = random_values)
-df2 <- data.frame(index,
-                 u2 = up_values,
-                 d2 = down_values,
-                 r2 = random_values)
-
-df1
-df2
-
-corr_col(x = df1, y = df2)
+corr_col(x = dfx, y = dfy)
 ```
 
 Observe:
@@ -114,11 +98,31 @@ Observe:
     -   Since there are three numeric columns in each data frame above, there are 9 total combinations in the result.
 -   There are two additional FDR `q` columns: `q_x` and `q_y` (the default names). These are calculated *per grouping* of the `x` and `y` values, respectively. If `x` or `y` are renamed with `x_name` or `y_name` arguments, the `q_*` columns will be renamed to match.
 
-### Three Data Frames (`x`,`y`,`z`)
+### Three Data Frames (`pcor_col()`)
 
-Note: `pcor_col()` for three data frames has not been implemented yet.
+When `pcor_col()` receives three data frames (the `x`, `y`, and `z` arguments) it does *pairwise partial correlation between all pairs of numeric columns between `x` and `y` using all numeric columns of `z` as covariates*.
 
-Note: `corr_col()` does not accept two data frames. It requires either one or two data frames as input.
+For example:
+
+```{r}
+
+library(dplyr)
+
+dfx <- data.frame(i = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
+dfy <- data.frame(i = as.character(1:5),
+                  up_y = 1:5,
+                  down_y = 5:1,
+                  rand_y = runif(5))
+dfz <- data.frame(i = as.character(1:5),
+                  rand_z = runif(5))
+
+pcor_col(x = dfx,
+         y = dfy,
+         z = dfz)
+```
 
 ### Naming Outputs
 
@@ -127,12 +131,19 @@ All `coracle` functions include `*_name` arguments to override the default colum
 For example:
 
 ```{r}
-df1
-df2
+
+dfx <- data.frame(i = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
+dfy <- data.frame(i = as.character(1:5),
+                  up_y = 1:5,
+                  down_y = 5:1,
+                  rand_y = runif(5))
 
 corr_col(
-  x = df1,
-  y = df2,
+  x = dfx,
+  y = dfy,
   x_name = "FIRST",
   y_name = "SECOND"
 )
@@ -149,10 +160,16 @@ By default, all `coracle` functions which accept two or more data frames as inpu
 For example:
 
 ```{r}
-df1
-df2
+dfx <- data.frame(i = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
+dfy <- data.frame(i = as.character(1:5),
+                  up_y = 1:5,
+                  down_y = 5:1,
+                  rand_y = runif(5))
 
-corr_col(x = df1, y = df2)
+corr_col(x = dfx, y = dfy)
 ```
 
 Observe:
@@ -172,12 +189,18 @@ For example:
 
 library(dplyr)
 
-df1
-df2
+dfx <- data.frame(i_x = as.character(1:5),
+                  up_x = 1:5,
+                  down_x = 5:1,
+                  rand_x = runif(5))
+dfy <- data.frame(i_y = as.character(1:5),
+                  up_y = 1:5,
+                  down_y = 5:1,
+                  rand_y = runif(5))
 
-corr_col(x = df1,
-         y = df2,
-         xy_join = join_by(u1 == u2))
+corr_col(x = dfx,
+         y = dfy,
+         xy_join = join_by(i_x == i_y))
 ```
 
 Observe:
