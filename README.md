@@ -1,6 +1,4 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 # coracle
 
 <img src="man/figures/coracle_hex.png" width="150" />
@@ -59,10 +57,10 @@ dfx <- data.frame(i = as.character(1:5),
                   rand_x = runif(5))
 
 corr_col(x = dfx)
-#>        x      y  rho            p message            q
-#> 1   up_x down_x -1.0 1.123412e-23      NA 3.370237e-23
-#> 2   up_x rand_x  0.9 3.738607e-02      NA 3.738607e-02
-#> 3 down_x rand_x -0.9 3.738607e-02      NA 3.738607e-02
+#>        x      y  rho            p n message            q
+#> 1   up_x down_x -1.0 1.123412e-23 5      NA 3.370237e-23
+#> 2   up_x rand_x  0.9 3.738607e-02 5      NA 3.738607e-02
+#> 3 down_x rand_x -0.9 3.738607e-02 5      NA 3.738607e-02
 ```
 
 Note:
@@ -96,18 +94,18 @@ corr_col(x = dfx, y = dfy)
 #> • "i" = "i"
 #> ! Override by providing `xy_join` argument.
 #> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 8
-#>   x      y        rho        p message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.6 2.85e- 1 NA      2.85e- 1 4.27e- 1 3.20e- 1
-#> 4 down_x up_y    -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.6 2.85e- 1 NA      2.85e- 1 4.27e- 1 3.20e- 1
-#> 7 rand_x up_y     0.9 3.74e- 2 NA      5.61e- 2 3.74e- 2 5.61e- 2
-#> 8 rand_x down_y  -0.9 3.74e- 2 NA      5.61e- 2 3.74e- 2 5.61e- 2
-#> 9 rand_x rand_y  -0.3 6.24e- 1 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> # A tibble: 9 × 9
+#>   x      y        rho        p     n message      q_x      q_y        q
+#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
+#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 3 up_x   rand_y  -0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 4.40e- 1
+#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 6 down_x rand_y   0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 4.40e- 1
+#> 7 rand_x up_y     0.9 3.74e- 2     5 NA      5.61e- 2 3.74e- 2 5.61e- 2
+#> 8 rand_x down_y  -0.9 3.74e- 2     5 NA      5.61e- 2 3.74e- 2 5.61e- 2
+#> 9 rand_x rand_y  -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
 ```
 
 Observe:
@@ -164,18 +162,18 @@ pcor_col(x = dfx,
 #> • "i" = "i"
 #> ! Override by providing `xz_join` argument.
 #> → Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 9
-#>   x      y      z         rho      p message     q    q_x   q_y
-#>   <chr>  <chr>  <chr>   <dbl>  <dbl> <lgl>   <dbl>  <dbl> <dbl>
-#> 1 up_x   up_y   rand_z -1     0      NA      0     0      0    
-#> 2 up_x   down_y rand_z  1     0      NA      0     0      0    
-#> 3 up_x   rand_y rand_z  0.920 0.0799 NA      0.120 0.0799 0.120
-#> 4 down_x up_y   rand_z  1     0      NA      0     0      0    
-#> 5 down_x down_y rand_z -1     0      NA      0     0      0    
-#> 6 down_x rand_y rand_z -0.920 0.0799 NA      0.120 0.0799 0.120
-#> 7 rand_x up_y   rand_z  0.813 0.187  NA      0.210 0.280  0.187
-#> 8 rand_x down_y rand_z -0.813 0.187  NA      0.210 0.280  0.187
-#> 9 rand_x rand_y rand_z  0.687 0.313  NA      0.313 0.313  0.313
+#> # A tibble: 9 × 10
+#>   x      y      z         rho     p     n message     q   q_x   q_y
+#>   <chr>  <chr>  <chr>   <dbl> <dbl> <int> <lgl>   <dbl> <dbl> <dbl>
+#> 1 up_x   up_y   rand_z -1     0         5 NA      0     0     0    
+#> 2 up_x   down_y rand_z  1     0         5 NA      0     0     0    
+#> 3 up_x   rand_y rand_z -0.870 0.130     5 NA      0.194 0.130 0.194
+#> 4 down_x up_y   rand_z  1     0         5 NA      0     0     0    
+#> 5 down_x down_y rand_z -1     0         5 NA      0     0     0    
+#> 6 down_x rand_y rand_z  0.870 0.130     5 NA      0.194 0.130 0.194
+#> 7 rand_x up_y   rand_z -0.333 0.667     5 NA      0.75  0.826 0.667
+#> 8 rand_x down_y rand_z  0.333 0.667     5 NA      0.75  0.826 0.667
+#> 9 rand_x rand_y rand_z -0.174 0.826     5 NA      0.826 0.826 0.826
 ```
 
 ### Naming Outputs
@@ -206,18 +204,18 @@ corr_col(
 #> • "i" = "i"
 #> ! Override by providing `xy_join` argument.
 #> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 8
-#>   FIRST  SECOND   rho        p message  q_FIRST q_SECOND        q
-#>   <chr>  <chr>  <dbl>    <dbl> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y   0.9 3.74e- 2 NA      3.74e- 2 5.61e- 2 5.61e- 2
-#> 4 down_x up_y    -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y  -0.9 3.74e- 2 NA      3.74e- 2 5.61e- 2 5.61e- 2
-#> 7 rand_x up_y    -0.1 8.73e- 1 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 8 rand_x down_y   0.1 8.73e- 1 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 9 rand_x rand_y  -0.3 6.24e- 1 NA      8.73e- 1 6.24e- 1 8.02e- 1
+#> # A tibble: 9 × 9
+#>   FIRST  SECOND   rho        p     n message  q_FIRST q_SECOND        q
+#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
+#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 3 up_x   rand_y   0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
+#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 6 down_x rand_y  -0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
+#> 7 rand_x up_y     0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
+#> 8 rand_x down_y  -0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
+#> 9 rand_x rand_y   0.7 1.88e- 1     5 NA      3.91e- 1 1.88e- 1 2.42e- 1
 ```
 
 Observe:
@@ -247,18 +245,18 @@ corr_col(x = dfx, y = dfy)
 #> • "i" = "i"
 #> ! Override by providing `xy_join` argument.
 #> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 8
-#>   x      y        rho        p message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.4 5.05e- 1 NA      5.05e- 1 5.05e- 1 5.05e- 1
-#> 4 down_x up_y    -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.4 5.05e- 1 NA      5.05e- 1 5.05e- 1 5.05e- 1
-#> 7 rand_x up_y     0.4 5.05e- 1 NA      5.05e- 1 5.05e- 1 5.05e- 1
-#> 8 rand_x down_y  -0.4 5.05e- 1 NA      5.05e- 1 5.05e- 1 5.05e- 1
-#> 9 rand_x rand_y   0.5 3.91e- 1 NA      5.05e- 1 5.05e- 1 5.05e- 1
+#> # A tibble: 9 × 9
+#>   x      y        rho        p     n message      q_x      q_y        q
+#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
+#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 3 up_x   rand_y  -0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 5.87e- 1
+#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 6 down_x rand_y   0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 5.87e- 1
+#> 7 rand_x up_y     0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> 8 rand_x down_y  -0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> 9 rand_x rand_y   0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
 ```
 
 Observe:
@@ -298,18 +296,18 @@ corr_col(x = dfx,
 #> • "i_x" = "i_y"
 #> ! Override by providing `xy_join` argument.
 #> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 8
-#>   x      y        rho        p message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y   0.5 3.91e- 1 NA      3.91e- 1 5.87e- 1 5.87e- 1
-#> 4 down_x up_y    -1   1.12e-23 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y  -0.5 3.91e- 1 NA      3.91e- 1 5.87e- 1 5.87e- 1
-#> 7 rand_x up_y     0.1 8.73e- 1 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 8 rand_x down_y  -0.1 8.73e- 1 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 9 rand_x rand_y  -0.2 7.47e- 1 NA      8.73e- 1 7.47e- 1 8.73e- 1
+#> # A tibble: 9 × 9
+#>   x      y        rho        p     n message      q_x      q_y        q
+#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
+#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 3 up_x   rand_y  -0.6 2.85e- 1     5 NA      2.85e- 1 2.85e- 1 3.66e- 1
+#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
+#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
+#> 6 down_x rand_y   0.6 2.85e- 1     5 NA      2.85e- 1 2.85e- 1 3.66e- 1
+#> 7 rand_x up_y     0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
+#> 8 rand_x down_y  -0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
+#> 9 rand_x rand_y  -0.7 1.88e- 1     5 NA      3.91e- 1 2.85e- 1 3.39e- 1
 ```
 
 Observe:
