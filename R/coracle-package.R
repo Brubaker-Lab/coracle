@@ -4,6 +4,7 @@
 ## usethis namespace: start
 #' @import cli
 #' @import dplyr
+#' @import furrr
 #' @import purrr
 #' @import tibble
 #' @import tidyr

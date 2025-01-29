@@ -206,3 +206,59 @@ Observe:
 -   Columns used to join data frames are excluded from the calculations.
     -   Since we joined by the "up" columns of each data frame (`u1` and `u2`), only the "down" (`d1`, `d2`) and "random" (`r1`, `r2`) columns are included in the result, for a total of 4 combinations.
 -   The `xy_join` argument expects the output of `dplyr::join_by()` which can be assigned to another variable which is passed to the function or done directly in the `coracle` function call (as shown).
+
+### Using `future` to Parallelize Calculations
+
+By default, all `coracle` functions work with `future` plans in order to parallelize the calculation.
+
+For example:
+
+```{r}
+
+n <- 100
+
+dfx <- data.frame(i = as.character(1:n),
+                  replicate(n, runif(n)))
+dfy <- data.frame(i = as.character(1:n),
+                  replicate(n, runif(n)))
+
+library(future)
+library(tictoc)
+
+plan(sequential)
+
+tic(msg = "Sequential function call")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+
+plan(multisession) # Maximum workers available
+
+tic(msg = "Parallel function call with maximum workers available")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+
+plan(multisession, workers = 6)
+
+tic(msg = "Parallel function call with 6 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+
+plan(multisession, workers = 4)
+
+tic(msg = "Parallel function call with 4 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+
+plan(multisession, workers = 2)
+
+tic(msg = "Parallel function call with 2 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+
+plan(sequential) # Reset plan
+
+```
+
+Observe:
+
+- There is no one-size-fits-all plan and more workers are not always faster. Parallelization incurs overhead and, depending on the size of the data and the number of cores available, a faster plan may require some planning and/or trial and error. 

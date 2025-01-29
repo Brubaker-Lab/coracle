@@ -59,8 +59,8 @@ dfx <- data.frame(i = as.character(1:5),
 corr_col(x = dfx)
 #>        x      y  rho            p n message            q
 #> 1   up_x down_x -1.0 1.123412e-23 5      NA 3.370237e-23
-#> 2   up_x rand_x  0.9 3.738607e-02 5      NA 3.738607e-02
-#> 3 down_x rand_x -0.9 3.738607e-02 5      NA 3.738607e-02
+#> 2   up_x rand_x -0.1 8.728886e-01 5      NA 8.728886e-01
+#> 3 down_x rand_x  0.1 8.728886e-01 5      NA 8.728886e-01
 ```
 
 Note:
@@ -99,13 +99,13 @@ corr_col(x = dfx, y = dfy)
 #>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
 #> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
 #> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 4.40e- 1
+#> 3 up_x   rand_y  -0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
 #> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
 #> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 4.40e- 1
-#> 7 rand_x up_y     0.9 3.74e- 2     5 NA      5.61e- 2 3.74e- 2 5.61e- 2
-#> 8 rand_x down_y  -0.9 3.74e- 2     5 NA      5.61e- 2 3.74e- 2 5.61e- 2
-#> 9 rand_x rand_y  -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
+#> 6 down_x rand_y   0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
+#> 7 rand_x up_y    -0.5 3.91e- 1     5 NA      5.05e- 1 3.91e- 1 4.40e- 1
+#> 8 rand_x down_y   0.5 3.91e- 1     5 NA      5.05e- 1 3.91e- 1 4.40e- 1
+#> 9 rand_x rand_y   0.4 5.05e- 1     5 NA      5.05e- 1 5.05e- 1 5.05e- 1
 ```
 
 Observe:
@@ -163,17 +163,17 @@ pcor_col(x = dfx,
 #> ! Override by providing `xz_join` argument.
 #> → Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
 #> # A tibble: 9 × 10
-#>   x      y      z         rho     p     n message     q   q_x   q_y
-#>   <chr>  <chr>  <chr>   <dbl> <dbl> <int> <lgl>   <dbl> <dbl> <dbl>
-#> 1 up_x   up_y   rand_z -1     0         5 NA      0     0     0    
-#> 2 up_x   down_y rand_z  1     0         5 NA      0     0     0    
-#> 3 up_x   rand_y rand_z -0.870 0.130     5 NA      0.194 0.130 0.194
-#> 4 down_x up_y   rand_z  1     0         5 NA      0     0     0    
-#> 5 down_x down_y rand_z -1     0         5 NA      0     0     0    
-#> 6 down_x rand_y rand_z  0.870 0.130     5 NA      0.194 0.130 0.194
-#> 7 rand_x up_y   rand_z -0.333 0.667     5 NA      0.75  0.826 0.667
-#> 8 rand_x down_y rand_z  0.333 0.667     5 NA      0.75  0.826 0.667
-#> 9 rand_x rand_y rand_z -0.174 0.826     5 NA      0.826 0.826 0.826
+#>   x      y      z         rho        p     n message        q      q_x      q_y
+#>   <chr>  <chr>  <chr>   <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
+#> 1 up_x   up_y   rand_z -1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
+#> 2 up_x   down_y rand_z  1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
+#> 3 up_x   rand_y rand_z -0.664 3.36e- 1     5 NA      4.47e- 1 3.36e- 1 5.04e- 1
+#> 4 down_x up_y   rand_z  1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
+#> 5 down_x down_y rand_z -1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
+#> 6 down_x rand_y rand_z  0.664 3.36e- 1     5 NA      4.47e- 1 3.36e- 1 5.04e- 1
+#> 7 rand_x up_y   rand_z -0.603 3.97e- 1     5 NA      4.47e- 1 5.95e- 1 3.97e- 1
+#> 8 rand_x down_y rand_z  0.603 3.97e- 1     5 NA      4.47e- 1 5.95e- 1 3.97e- 1
+#> 9 rand_x rand_y rand_z  0.210 7.90e- 1     5 NA      7.90e- 1 7.90e- 1 7.90e- 1
 ```
 
 ### Naming Outputs
@@ -209,13 +209,13 @@ corr_col(
 #>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
 #> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
 #> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y   0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
+#> 3 up_x   rand_y   0.9 3.74e- 2     5 NA      3.74e- 2 5.61e- 2 5.61e- 2
 #> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
 #> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y  -0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
-#> 7 rand_x up_y     0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
-#> 8 rand_x down_y  -0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
-#> 9 rand_x rand_y   0.7 1.88e- 1     5 NA      3.91e- 1 1.88e- 1 2.42e- 1
+#> 6 down_x rand_y  -0.9 3.74e- 2     5 NA      3.74e- 2 5.61e- 2 5.61e- 2
+#> 7 rand_x up_y    -0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> 8 rand_x down_y   0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> 9 rand_x rand_y  -0.5 3.91e- 1     5 NA      6.24e- 1 3.91e- 1 5.03e- 1
 ```
 
 Observe:
@@ -250,13 +250,13 @@ corr_col(x = dfx, y = dfy)
 #>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
 #> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
 #> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 5.87e- 1
+#> 3 up_x   rand_y  -0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
 #> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
 #> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.5 3.91e- 1     5 NA      3.91e- 1 5.87e- 1 5.87e- 1
-#> 7 rand_x up_y     0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
-#> 8 rand_x down_y  -0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
-#> 9 rand_x rand_y   0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
+#> 6 down_x rand_y   0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
+#> 7 rand_x up_y    -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
+#> 8 rand_x down_y   0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
+#> 9 rand_x rand_y  -0.6 2.85e- 1     5 NA      8.54e- 1 2.85e- 1 3.66e- 1
 ```
 
 Observe:
@@ -301,13 +301,13 @@ corr_col(x = dfx,
 #>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
 #> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
 #> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.6 2.85e- 1     5 NA      2.85e- 1 2.85e- 1 3.66e- 1
+#> 3 up_x   rand_y   0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
 #> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
 #> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.6 2.85e- 1     5 NA      2.85e- 1 2.85e- 1 3.66e- 1
-#> 7 rand_x up_y     0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
-#> 8 rand_x down_y  -0.5 3.91e- 1     5 NA      3.91e- 1 3.91e- 1 3.91e- 1
-#> 9 rand_x rand_y  -0.7 1.88e- 1     5 NA      3.91e- 1 2.85e- 1 3.39e- 1
+#> 6 down_x rand_y  -0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
+#> 7 rand_x up_y    -0.6 2.85e- 1     5 NA      4.27e- 1 2.85e- 1 3.20e- 1
+#> 8 rand_x down_y   0.6 2.85e- 1     5 NA      4.27e- 1 2.85e- 1 3.20e- 1
+#> 9 rand_x rand_y  -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
 ```
 
 Observe:
@@ -319,3 +319,67 @@ Observe:
 - The `xy_join` argument expects the output of `dplyr::join_by()` which
   can be assigned to another variable which is passed to the function or
   done directly in the `coracle` function call (as shown).
+
+### Using `future` to Parallelize Calculations
+
+By default, all `coracle` functions work with `future` plans in order to
+parallelize the calculation.
+
+For example:
+
+``` r
+
+n <- 100
+
+dfx <- data.frame(i = as.character(1:n),
+                  replicate(n, runif(n)))
+dfy <- data.frame(i = as.character(1:n),
+                  replicate(n, runif(n)))
+
+library(future)
+library(tictoc)
+
+plan(sequential)
+
+tic(msg = "Sequential function call")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+#> Sequential function call: 5.78 sec elapsed
+
+plan(multisession) # Maximum workers available
+
+tic(msg = "Parallel function call with maximum workers available")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+#> Parallel function call with maximum workers available: 6.09 sec elapsed
+
+plan(multisession, workers = 6)
+
+tic(msg = "Parallel function call with 6 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+#> Parallel function call with 6 workers: 10.03 sec elapsed
+
+plan(multisession, workers = 4)
+
+tic(msg = "Parallel function call with 4 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+#> Parallel function call with 4 workers: 8.43 sec elapsed
+
+plan(multisession, workers = 2)
+
+tic(msg = "Parallel function call with 2 workers")
+result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
+toc()
+#> Parallel function call with 2 workers: 5.67 sec elapsed
+
+plan(sequential) # Reset plan
+```
+
+Observe:
+
+- There is no one-size-fits-all plan and more workers are not always
+  faster. Parallelization incurs overhead and, depending on the size of
+  the data and the number of cores available, a faster plan may require
+  some planning and/or trial and error.
