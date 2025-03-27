@@ -1,3 +1,32 @@
+validate_coracle_input <- function(input,
+                                   arg = caller_arg(input),
+                                   call = caller_env()) {
+  if (!is.null(input) && !is.coracle_obj(input)) {
+    cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_obj}."))
+  }
+
+}
+
+validate_label_input <- function(input,
+                                 arg = caller_arg(input),
+                                 call = caller_env()) {
+  if (!is.null(input) && !is_scalar_character(input)) {
+    cli_abort(c("x" = "{.arg {arg}} requires {.cls character} scalar."))
+  }
+
+}
+
+validate_join_overlap <- function(x,
+                                  y,
+                                  arg_x = caller_arg(x),
+                                  arg_y = caller_arg(y),
+                                  call = caller_env()){
+
+
+
+}
+
+
 #' Title
 #'
 #' @param x
@@ -23,85 +52,59 @@
 #'
 #' @examples
 coracle <- function(x,
-                 y = NULL,
-                 z = NULL,
-                 ...,
+                    y = NULL,
+                    z = NULL,
+                    ...,
 
-                 x_name = NULL, # Column with the variable of interest
-                 x_join = NULL, # Column to use for joining
-                 x_vals = NULL, # Column(s) of values for correlation
-                 x_labl = NULL, #
+                    x_label = NULL,
+                    y_label = NULL,
+                    z_label = NULL,
 
-                 y_name = NULL,
-                 y_join = NULL,
-                 y_vals = NULL,
-                 y_labl = NULL,
+                    method = "spearman") {
 
-                 z_name = NULL,
-                 z_join = NULL,
-                 z_vals = NULL,
-                 z_labl = NULL,
+  validate_coracle_input(x)
+  validate_coracle_input(y)
+  validate_coracle_input(z)
 
-                 method = "spearman") {
+  validate_label_input(x_label)
+  validate_label_input(y_label)
+  validate_label_input(z_label)
 
-  x <- validate_inputs(x, x_name, x_join, x_vals, x_labl)
+  arg_match(method, c("spearman", "pearson", "kendall"))
 
-  if (!is.null(y)) {
-    y <- validate_inputs(y, y_name, y_join, y_vals, y_labl)
-  }
+  result <- NULL
 
-  if (!is.null(z)) {
-    z <- validate_inputs(z, z_name, z_join, z_vals, z_labl)
-  }
-
-  arg_match(method, c("pearson", "kendall", "spearman"))
-
-  if(!is.null(y) && !is.null(z)){
-    # Partial
-    cli_abort(c("x" = "Partial correlation has not been implemented yet!"))
-
-    corr_xyz(x, y, z, method)
-
-  } else if (!is.null(y)) {
-    # Paired
-    corr_xy(x, y, method)
-
+  if (!is.null(x) && !is.null(y) && !is.null(z)) {
+    #map_pair_part(x, y, z)
+  } else if (!is.null(x) && !is.null(y)) {
+    map_pair(x, y)
+  } else if (!is.null(x) && !is.null(z)) {
+    #map_auto_part(x, z)
+  } else if (!is.null(x)) {
+    #map_auto(x)
   } else {
-    # Autocorrelation
-    cli_abort(c("x" = "Autocorrelation has not been implemented yet!"))
-    corr_x(x, method)
+    cli_abort(c("x" = "This case should be unreachable!"))
   }
 
 }
 
-corr_xyz <- function(x, y, z, method){
+map_pair <- function(a, b) {
+
+  validate_join_overlap(a, b)
+
+  future_map(a$data, \(x_dat) map(b$data, \(y_dat) correlate(x_dat, y_dat, a, b)))
 
 }
 
-corr_xy <- function(x, y, method){
+correlate <- function(a_dat, b_dat, a, b) {
 
+  # avoids `join_by`'s input validation
+  a_join <- a$join_col
+  b_join <- b$join_col
 
-  future_map()
-
-  # future_map(x$data,
-  #      \(a) map(y$data,
-  #                \(b) {
-  #                  full_join(a,
-  #                            b,
-  #                            by = join_by(
-  #                                !!sym(x$join_col) == !!sym(y$join_col)
-  #                              ),
-  #                            keep = T
-  #                            ) |> print()}))
-
-}
-
-corr_x <- function(x, method){
-
-}
-
-corr_data <- function(a, b){
-
-
+  corr_data <- full_join(a_dat,
+                         b_dat,
+                         by = join_by(!!sym(a_join) == !!sym(b_join)),
+                         suffix = c(a$id, b$id))
 
 }

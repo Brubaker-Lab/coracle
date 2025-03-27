@@ -6,6 +6,7 @@
 #' @import dplyr
 #' @import furrr
 #' @import purrr
+#' @import S7
 #' @import tibble
 #' @import tidyr
 #' @importFrom ppcor pcor.test
