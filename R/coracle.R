@@ -26,6 +26,39 @@ validate_join_overlap <- function(x,
 
 }
 
+corr_result <- function(name_a,
+                        name_b = NA_character_,
+                        name_c = NA_character_,
+                        stat_value = NA,
+                        p = NA,
+                        n = NA,
+                        message = NA_character_,
+                        method
+){
+
+  stat_name <- list(spearman = "rho",
+                    kendall = "tau",
+                    pearson = "cor")
+
+  result_front <- list(a = name_a,
+                 b = name_b)
+
+  if(!is.na(name_c)){
+    result_front <- c(result_front, c = name_c)
+  }
+
+  statistic <- stat_value
+  names(statistic) <- stat_name[[method]]
+
+  result_back <- list(
+    p = p,
+    n = n,
+    message = message
+  )
+
+  c(result_front, statistic, result_back)
+
+}
 
 #' Title
 #'
@@ -75,12 +108,15 @@ coracle <- function(x,
   result <- NULL
 
   if (!is.null(x) && !is.null(y) && !is.null(z)) {
+    cli_abort(c("x" = "Pairwise partial correlation has not been implemented yet"))
     #map_pair_part(x, y, z)
   } else if (!is.null(x) && !is.null(y)) {
     map_pair(x, y)
   } else if (!is.null(x) && !is.null(z)) {
+    cli_abort(c("x" = "Partial correlation has not been implemented yet"))
     #map_auto_part(x, z)
   } else if (!is.null(x)) {
+    cli_abort(c("x" = "Autocorrelation has not been implemented yet"))
     #map_auto(x)
   } else {
     cli_abort(c("x" = "This case should be unreachable!"))
@@ -92,11 +128,34 @@ map_pair <- function(a, b) {
 
   validate_join_overlap(a, b)
 
-  future_map(a$data, \(x_dat) map(b$data, \(y_dat) correlate(x_dat, y_dat, a, b)))
+  future_map(a$data, \(a_data) map(b$data, \(b_data) correlate(a_data, b_data, a, b)))
 
 }
 
-correlate <- function(a_dat, b_dat, a, b) {
+outer_loop <- function(a,b){
+
+  future_map(a$data,
+             \(a_data){
+
+              if(is_values_constant){
+                return
+              }
+
+
+
+             })
+}
+
+is_values_constant <- function(a_data, a){
+
+  a_data |>
+    pluck(a$vals_col) |>
+    unique() |>
+    length() == 1
+
+}
+
+correlate <- function(a_data, b_data, a, b) {
 
   # avoids `join_by`'s input validation
   a_join <- a$join_col

@@ -127,9 +127,33 @@ f_initialize <- function(data,
     group_by(!!sym(name_col)) |>
     group_split()
 
+  ## Recursion ------------
+
+  if(length(data) != 1){
+
+    data <- map(data,
+                \(d) coracle_obj$new(data = d,
+                                     name_col = name_col,
+                                     join_col = join_col,
+                                     vals_cols = vals_col))
+
+  }
 
   self$data <- data
-  self$id <- hash(Sys.time())
+  self$id <- hash(as.numeric(Sys.time()))
+}
+
+
+# Chunks function ------------
+
+f_chunks <- function(obj = self){
+
+  if(is.data.frame(obj$data)){
+    return(obj$data)
+  } else {
+
+  }
+
 }
 
 # Object Definition ------------
@@ -145,6 +169,12 @@ coracle_obj <- R6Class(
     join_vals = NULL,
     vals_col = NULL,
     other_cols = NULL,
-    initialize = f_initialize
+    initialize = f_initialize),
+  active = list(
+    chunks = f_chunks
   )
 )
+
+test_obj <- coracle_obj$new(data = test_df, name = "variable", join="rowname", vals_cols = test_df |> select(where(is.numeric)) |> names())
+
+print(test_obj$chunks)
