@@ -6,9 +6,10 @@
 #' @import dplyr
 #' @import furrr
 #' @import purrr
-#' @import S7
 #' @import tibble
 #' @import tidyr
+#' @import tidyselect
+#' @import rlang
 #' @importFrom ppcor pcor.test
 #' @importFrom janitor remove_constant
 #' @importFrom magrittr %>%

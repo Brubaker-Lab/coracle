@@ -1,196 +1,29 @@
-hold_validate_inputs <-
-  function(data,
-           grps,
-           join,
-           vals,
-           labl,
-           arg_data = caller_arg(data),
-           arg_grps = caller_arg(grps),
-           arg_join = caller_arg(join),
-           arg_vals = caller_arg(vals),
-           arg_labl = caller_arg(labl),
-           call = caller_env()) {
-    # Data ------------
+coracle_verbosity <- "coracle_verbosity"
+mode_quiet <- "quiet"
+mode_verbose <- "verbose"
+mode_debug <- "debug"
 
+set_coracle_verbosity <- function(level){
 
-    if (!is.data.frame(data)) {
-      cli_abort(c("x" = "{.arg {arg_data}} requires a {.cls data.frame}."),
-                call = call)
-    }
+  rlang::arg_match(level, c(mode_quiet, mode_verbose, mode_debug))
 
+  options(coracle_verbosity = level)
 
-    # Validate Join Column ------------
+}
 
-    if(is.null(join)){
-      cli_inform(c("!" = "No input to {.arg {arg_join}}.",
-                   ">" = "Defaulting to second column of {.arg {arg_data}}."))
+is_verbose <- function(){
 
-      join <- names(data)[2]
+  (getOption(coracle_verbosity, default = mode_verbose) == mode_verbose) || is_mode_debug()
+}
 
-      cli_inform(c("v" = "{.arg {arg_join}} = {.val {join}}"))
+is_quiet <- function(){
+  getOption(coracle_verbosity, default = mode_verbose) == mode_quiet
+}
 
-    }
+is_debug <- function(){
+  getOption(coracle_verbosity, default = mode_verbose) == mode_debug
+}
 
-    if (!is_scalar_character(join)) {
-      cli_abort(c("x" = "{.arg {arg_join}} requires a {.cls character} scalar."),
-                call = call)
-    }
-
-    if (!(join %in% names(data))) {
-      cli_abort(c("x" = "{.arg {arg_join}} column {.val {join}} is not in {.arg {arg_data}}."),
-                call = call)
-    }
-
-    # Validate Value Column(s) ------------
-
-    if (is.null(vals)) {
-      cli_inform(
-        c("!" = "No input to {.arg {arg_vals}}.", ">" = "Defaulting to non-join, non-group numeric column(s) of {.arg {arg_data}}")
-      )
-
-      numeric_cols <- data |>
-        select(-any_of(c(grps, join))) |>
-        select(where(is.numeric)) |>
-        names()
-
-      if (is_empty(numeric_cols)) {
-        cli_abort(c("x" = "{.arg {arg_data}} does not have any valid {.cls numeric} column(s)."))
-      }
-
-      vals <- numeric_cols
-
-      cli_inform(c("v" = "{.arg {arg_vals}} = {.val {vals}}."))
-
-    }
-
-    if (!is_character(vals)) {
-      cli_abort(c("x" = "{.arg {arg_vals}} requires a {.cls character} vector."),
-                call = call)
-    }
-
-    if (!all(vals %in% names(data))) {
-      missing_cols <- setdiff(vals, names(data))
-
-      cli_abort(
-        c("x" = "{.arg {arg_vals}} column(s) {.val {missing_cols}} are not in {.arg {arg_data}}."),
-        call = call
-      )
-
-    }
-
-    format <- NULL
-
-    if (length(vals) > 1) {
-      format <- "wide"
-    } else {
-      format <- "long"
-    }
-
-    # Validate Group and Label ------------
-
-
-    if (format == "long") {
-      # "Long" format must have grps from data, *may* have labl
-
-      if(is.null(grps)){
-        cli_inform(c("!" = "No input to {.arg {arg_grps}}.",
-                     ">" = "Defaulting to first column of {.arg {arg_data}}."))
-
-        grps <- names(data)[1]
-
-        cli_inform(c("v" = "{.arg {arg_grps}} = {.val {grps}}"))
-
-      }
-
-      if (!is_scalar_character(grps)) {
-        cli_abort(c("x" = "For 'long' inputs {.arg {arg_grps}} requires a {.cls character}."),
-                  call = call)
-      }
-
-      if (!(grps %in% names(data))) {
-        cli_abort(
-          c("x" = "{.arg {arg_grps}} column(s) {.val {setdiff(grps, names(data))}} is not in {.arg {arg_data}}."),
-          call = call
-        )
-      }
-
-      if (is.null(labl)) {
-        cli_inform(c("!" = "No input to {.arg {arg_labl}}.", ">" = "Defaulting to {.arg {arg_grps}}."))
-
-        labl <- grps
-
-        cli_inform(c("v" = "{.arg {arg_labl}} = {.val {labl}}"))
-      }
-
-      if (!is_scalar_character(labl)) {
-        cli_abort(c("x" = "{.arg {arg_labl}} requires a {.cls character} scalar."))
-      }
-
-
-    } else if (format == "wide") {
-      # "Wide" format does not use grps, must have labl
-
-      if (!is_null(grps)) {
-        cli_inform(c("!" = "For 'wide' inputs {.arg {arg_grps}} is unused."),
-                   call = call)
-      }
-
-      if (!is_scalar_character(labl)) {
-        cli_abort(c("x" = "{.arg {arg_labl}} requires a {.cls character} scalar."))
-      }
-
-    }
-
-    # Prefix for Uniqueness ------------
-
-    prefix <- paste0(arg_data,"_")
-
-
-
-    # Handle Data ------------
-
-    labl <- paste0(prefix, labl)
-      val_string <- paste0(prefix, "vals")
-
-    if (format == "wide") {
-
-      data <- data |>
-        pivot_longer(cols = all_of(vals),
-                     names_to = labl,
-                     values_to = val_string) |>
-        group_by(across(all_of(labl)))
-
-
-
-    } else if (format == "long") {
-
-      data <- data |>
-        rename_with(.fn = \(x) labl, .cols = all_of(grps)) |>
-        rename_with(.fn = \(x) val_string, .cols = all_of(vals)) |>
-        group_by(across(all_of(labl)))
-
-
-    }
-
-    vals <- val_string
-
-    join_string <- paste0(prefix,join)
-
-    data <- data |>
-      select(all_of(c(labl, join, vals))) |>
-      rename_with(.fn = \(x) join_string, .cols = all_of(join)) |>
-      group_split()
-
-      join <- join_string
-
-    list(
-      data = data,
-      vars = labl,
-      join = join,
-      vals = vals
-    )
-
-  }
 
 #' (Internal) Check data frames provided as inputs for basic requirements.
 #'
