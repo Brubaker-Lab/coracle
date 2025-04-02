@@ -73,8 +73,8 @@ coracle_data <- R6::R6Class(
 
       ### Tidyselect Group Column(s) ------------
 
-      grps_expr <- rlang::enquo(grps)
-      grps_pos <- tidyselect::eval_select(grps_expr, data)
+      grps_expr <- enquo(grps)
+      grps_pos <- eval_select(grps_expr, data)
 
       if (length(grps_pos) < 1)
         cli_abort(c("x" = "{.arg grps} requires a selection."), call = call)
@@ -83,8 +83,8 @@ coracle_data <- R6::R6Class(
 
       ### Tidyselect Join Column ------------
 
-      join_expr <- rlang::enquo(join)
-      join_pos <- tidyselect::eval_select(join_expr, data)
+      join_expr <- enquo(join)
+      join_pos <- eval_select(join_expr, data)
 
       if (length(join_pos) != 1)
         cli_abort(c("x" = "{.arg join} must select exactly one column."), call = call)
@@ -94,8 +94,8 @@ coracle_data <- R6::R6Class(
 
       ### Tidyselect Variable Column(s) ------------
 
-      vals_expr <- rlang::enquo(vals)
-      vals_pos <- tidyselect::eval_select(vals_expr, data)
+      vals_expr <- enquo(vals)
+      vals_pos <- eval_select(vals_expr, data)
 
       if (length(vals_pos) < 1)
         cli_abort(c("x" = "{.arg vals} requires a selection."), call = call)
@@ -122,7 +122,7 @@ coracle_data <- R6::R6Class(
       ### Reassemble data ------------
 
       data <- data |>
-        dplyr::relocate(!!grps_expr, !!join_expr, !!vals_expr)
+        relocate(!!grps_expr, !!join_expr, !!vals_expr)
 
       ### Transform data to long format, if necessary ------------
 
@@ -142,7 +142,7 @@ coracle_data <- R6::R6Class(
         name_col <- labl_cols %||% "names"
         values_col <- labl_vals %||% "values"
 
-        data <- data |> tidyr::pivot_longer(
+        data <- data |> pivot_longer(
           cols = all_of(names(vals_pos)),
           names_to = name_col,
           values_to = values_col
@@ -159,7 +159,7 @@ coracle_data <- R6::R6Class(
       ### Reorder columns -> grps, join, vals, other ------------
 
       data <- data |>
-        dplyr::relocate(all_of(self$grps_cols), self$join_col, self$vals_col, all_of(self$other_cols))
+        relocate(all_of(self$grps_cols), self$join_col, self$vals_col, all_of(self$other_cols))
 
       ### Chunk by grps, creating tree ------------
 
@@ -167,12 +167,12 @@ coracle_data <- R6::R6Class(
       {
 
         col_values <- data[[col]]
-        col_values <- col_values[!is.na(col_values)]
+        # col_values <- col_values[!is.na(col_values)]
 
         if(length(unique(col_values)) > 1){
 
           self$children <- sort(unique(col_values)) |>
-            purrr::set_names() |>
+            set_names() |>
             map(\(x)
                  coracle_data$new(data = data[data[[col]] == x,],
                                   grps = self$grps_cols,
@@ -191,7 +191,7 @@ coracle_data <- R6::R6Class(
         self$chunk <- data
       }
 
-      self$id <- rlang::hash(as.numeric(Sys.time())) |> stringr::str_sub(-7)
+      self$id <- hash(as.numeric(Sys.time())) |> str_sub(-7)
       self$version <- as.character(packageVersion("coracle"))
     }
   ),
@@ -210,9 +210,11 @@ coracle_data <- R6::R6Class(
     #' @examples
     chunks = function(node = self) {
 
-      map(self$leaves,
-          \(x) x$chunk)
-
+      if (!is.null(node$chunk)) {
+        return(node$chunk)
+      } else {
+        map(self$children, \(x) x$chunks) |> list_flatten()
+      }
     },
 
     #' @description
@@ -226,9 +228,17 @@ coracle_data <- R6::R6Class(
     #' @examples
     data = function(node = self) {
 
-      self$chunks |>
-        purrr::list_rbind()
+      if (!is.null(node$chunk)) {
+        return(node$chunk)
+      } else {
 
+      temp <- self$chunks
+
+      if(!is.data.frame(temp))
+        temp <- temp |> list_rbind()
+
+      return(temp)
+      }
     },
 
     #' @description
@@ -243,7 +253,7 @@ coracle_data <- R6::R6Class(
       if (!is.null(node$chunk)) {
         return(node)
       } else {
-        map(self$children, \(x) x$leaves) |> purrr::list_flatten()
+        map(self$children, \(x) x$leaves) |> list_flatten()
       }
     }
   )

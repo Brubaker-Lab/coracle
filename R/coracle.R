@@ -1,34 +1,15 @@
 validate_coracle_input <- function(input,
                                    arg = caller_arg(input),
                                    call = caller_env()) {
-  if (!is.null(input) && !is.coracle_obj(input)) {
+  if (!is.null(input) && !("coracle_data" %in% class(input))) {
     cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_obj}."))
   }
 
 }
 
-validate_label_input <- function(input,
-                                 arg = caller_arg(input),
-                                 call = caller_env()) {
-  if (!is.null(input) && !is_scalar_character(input)) {
-    cli_abort(c("x" = "{.arg {arg}} requires {.cls character} scalar."))
-  }
-
-}
-
-validate_join_overlap <- function(x,
-                                  y,
-                                  arg_x = caller_arg(x),
-                                  arg_y = caller_arg(y),
-                                  call = caller_env()){
-
-
-
-}
-
-corr_result <- function(name_a,
-                        name_b = NA_character_,
-                        name_c = NA_character_,
+corr_result <- function(a_grps,
+                        b_grps = NA_character_,
+                        c_grps = NA_character_,
                         stat_value = NA,
                         p = NA,
                         n = NA,
@@ -66,18 +47,6 @@ corr_result <- function(name_a,
 #' @param y
 #' @param z
 #' @param ...
-#' @param x_name
-#' @param x_join
-#' @param x_vals
-#' @param x_labl
-#' @param y_name
-#' @param y_join
-#' @param y_vals
-#' @param y_labl
-#' @param z_name
-#' @param z_join
-#' @param z_vals
-#' @param z_labl
 #' @param method
 #'
 #' @returns
@@ -88,20 +57,11 @@ coracle <- function(x,
                     y = NULL,
                     z = NULL,
                     ...,
-
-                    x_label = NULL,
-                    y_label = NULL,
-                    z_label = NULL,
-
                     method = "spearman") {
 
   validate_coracle_input(x)
   validate_coracle_input(y)
   validate_coracle_input(z)
-
-  validate_label_input(x_label)
-  validate_label_input(y_label)
-  validate_label_input(z_label)
 
   arg_match(method, c("spearman", "pearson", "kendall"))
 
@@ -109,42 +69,34 @@ coracle <- function(x,
 
   if (!is.null(x) && !is.null(y) && !is.null(z)) {
     cli_abort(c("x" = "Pairwise partial correlation has not been implemented yet"))
-    #map_pair_part(x, y, z)
+    result <- pairwise_partial_correlation(x, y, z, method)
   } else if (!is.null(x) && !is.null(y)) {
-    map_pair(x, y)
-  } else if (!is.null(x) && !is.null(z)) {
-    cli_abort(c("x" = "Partial correlation has not been implemented yet"))
-    #map_auto_part(x, z)
+    result <- pairwise_correlation(x, y, method)
   } else if (!is.null(x)) {
     cli_abort(c("x" = "Autocorrelation has not been implemented yet"))
-    #map_auto(x)
+    result <- autocorrelation(x, method)
   } else {
     cli_abort(c("x" = "This case should be unreachable!"))
   }
 
 }
 
-map_pair <- function(a, b) {
+pairwise_correlation <- function(x,y, method){
 
-  validate_join_overlap(a, b)
+  if(!is_joins_valid(x,y))
+    cli_abort(c("x" = "Not enough overlap in join values to run correlation."))
 
-  future_map(a$data, \(a_data) map(b$data, \(b_data) correlate(a_data, b_data, a, b)))
+  leaf_pairs <- expand_grid(a = x$leaves, b = y$leaves) |> mutate(method = method) |> slice_sample(n=100)
 
+  future_pmap(leaf_pairs,
+              correlate)
 }
 
-outer_loop <- function(a,b){
-
-  future_map(a$data,
-             \(a_data){
-
-              if(is_values_constant){
-                return
-              }
-
-
-
-             })
+is_joins_valid <- function(a,b){
+  length(intersect(a$join_vals, b$join_vals)) >= 3 # Min. 3 for correlation
 }
+
+
 
 is_values_constant <- function(a_data, a){
 
@@ -155,15 +107,24 @@ is_values_constant <- function(a_data, a){
 
 }
 
-correlate <- function(a_data, b_data, a, b) {
+correlate <- function(a, b, method) {
+
+  if(!is_joins_valid(a,b))
+    return()
 
   # avoids `join_by`'s input validation
   a_join <- a$join_col
   b_join <- b$join_col
 
-  corr_data <- full_join(a_dat,
-                         b_dat,
+  a_suffix <- paste0("_", a$id)
+  b_suffix <- paste0("_", b$id)
+
+  corr_data <- full_join(a$data,
+                         b$data,
                          by = join_by(!!sym(a_join) == !!sym(b_join)),
-                         suffix = c(a$id, b$id))
+                         suffix = c(a_suffix, b_suffix)) |>
+    drop_na()
+
+  corr_data
 
 }
