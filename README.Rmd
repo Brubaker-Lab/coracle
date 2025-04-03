@@ -59,7 +59,7 @@ Data must be loaded into `coracle_data` objects with `coracle_data$new()` *befor
 A `coracle_data` object begins with a `data.frame`:
 
 ```{r}
-library(tidyverse)
+library(tidyverse) 
 
 df <- expand_grid(first_col = LETTERS[1:3],
                   second_col = letters[1:10]) %>%

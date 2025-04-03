@@ -35,351 +35,354 @@ After installation, load the library with:
 library(coracle)
 ```
 
-## Examples
+## 1.X.X
 
-The two main functions of `coracle` (`corr_col()` and `pcor_col()`) are
-written to accommodate different cases depending on the inputs.
+This package facilitates correlation of data through the following:
 
-### One Data Frame (`corr_col()`)
+- Data handling, tree data structures, and pass-by-reference with `R6`.
+- Parallelization via `furrr` and `future`
 
-When `corr_col()` receives a single data frame (the required `x`
-argument) it does *pairwise correlation between all pairs of numeric
-columns within that data frame*.
+Data must be loaded into `coracle_data` objects with
+`coracle_data$new()` *before* it can be passed into `coracle()`. The
+`coracle_data` object initialization annotates, validates, and organizes
+the data for correlation. It requires the user to identify which
+column(s) of data to use for grouping, joining, and correlation.
 
-Note: `pcor_col()` does not accept a single data frame.
+### Preparing data with `coracle_data`
 
-For example:
+#### Creating a `coracle_data` object
+
+A `coracle_data` object begins with a `data.frame`:
 
 ``` r
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
+library(tidyverse) 
+#> Warning: package 'purrr' was built under R version 4.4.2
+#> Warning: package 'lubridate' was built under R version 4.4.2
+#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+#> ✔ dplyr     1.1.4     ✔ readr     2.1.5
+#> ✔ forcats   1.0.0     ✔ stringr   1.5.1
+#> ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+#> ✔ lubridate 1.9.4     ✔ tidyr     1.3.1
+#> ✔ purrr     1.0.4     
+#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+#> ✖ dplyr::filter() masks stats::filter()
+#> ✖ dplyr::lag()    masks stats::lag()
+#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
-corr_col(x = dfx)
-#>        x      y  rho            p n message            q
-#> 1   up_x down_x -1.0 1.123412e-23 5      NA 3.370237e-23
-#> 2   up_x rand_x -0.1 8.728886e-01 5      NA 8.728886e-01
-#> 3 down_x rand_x  0.1 8.728886e-01 5      NA 8.728886e-01
+df <- expand_grid(first_col = LETTERS[1:3],
+                  second_col = letters[1:10]) %>%
+  mutate(third_col = runif(nrow(.)))
+
+df
+#> # A tibble: 30 × 3
+#>    first_col second_col third_col
+#>    <chr>     <chr>          <dbl>
+#>  1 A         a              0.482
+#>  2 A         b              0.773
+#>  3 A         c              0.471
+#>  4 A         d              0.421
+#>  5 A         e              0.529
+#>  6 A         f              0.675
+#>  7 A         g              0.895
+#>  8 A         h              0.941
+#>  9 A         i              0.768
+#> 10 A         j              0.937
+#> # ℹ 20 more rows
 ```
 
-Note:
+During initialization the user will indicate:
 
-- Correlations are calculated for every combination of numeric columns.
-- Non-numeric columns (such as `index`) are excluded.
-- Correlations which could not be calculated return `NA` and a brief
-  explanatory `message` (relayed from `stats::cor_test()`).
-- False discovery rate (FDR) q-values are automatically calculated.
-
-### Two Data Frames (`corr_col()`)
-
-When `corr_col()` receives two data frames (the `x` and `y` arguments)
-it does *pairwise correlation between all pairs of numeric columns
-between the two data frames*.
-
-For example:
-
-``` r
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx, y = dfy)
-#> ℹ Joining `x` and `y` by the following columns:
-#> • "i" = "i"
-#> ! Override by providing `xy_join` argument.
-#> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 9
-#>   x      y        rho        p     n message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
-#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
-#> 7 rand_x up_y    -0.5 3.91e- 1     5 NA      5.05e- 1 3.91e- 1 4.40e- 1
-#> 8 rand_x down_y   0.5 3.91e- 1     5 NA      5.05e- 1 3.91e- 1 4.40e- 1
-#> 9 rand_x rand_y   0.4 5.05e- 1     5 NA      5.05e- 1 5.05e- 1 5.05e- 1
-```
-
-Observe:
-
-- Every combination of a column from `x` and a column from `y` have
-  their correlation calculated. No columns from `x` are correlated with
-  other `x` columns. The same is true for `y`.
-  - Since there are three numeric columns in each data frame above,
-    there are 9 total combinations in the result.
-- There are two additional FDR `q` columns: `q_x` and `q_y` (the default
-  names). These are calculated *per grouping* of the `x` and `y` values,
-  respectively. If `x` or `y` are renamed with `x_name` or `y_name`
-  arguments, the `q_*` columns will be renamed to match.
-
-### Three Data Frames (`pcor_col()`)
-
-When `pcor_col()` receives three data frames (the `x`, `y`, and `z`
-arguments) it does *pairwise partial correlation between all pairs of
-numeric columns between `x` and `y` using all numeric columns of `z` as
-covariates*.
-
-For example:
+- `grps` - The “grouping column(s)” which identify the subject of
+  interest (i.e. microbes, drugs)
+- `join` - The “joining column” which will be used to join different
+  datasets together for correlation (i.e. genes).
+- `vals` - The “values column(s)” which contains the values for
+  correlation.
 
 ``` r
 
-library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
-
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-dfz <- data.frame(i = as.character(1:5),
-                  rand_z = runif(5))
-
-pcor_col(x = dfx,
-         y = dfy,
-         z = dfz)
-#> ℹ Joining `x` and `y` by the following columns:
-#> • "i" = "i"
-#> ! Override by providing `xy_join` argument.
-#> ℹ Joining `x` and `z` by the following columns:
-#> • "i" = "i"
-#> ! Override by providing `xz_join` argument.
-#> → Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 10
-#>   x      y      z         rho        p     n message        q      q_x      q_y
-#>   <chr>  <chr>  <chr>   <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y   rand_z -1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
-#> 2 up_x   down_y rand_z  1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
-#> 3 up_x   rand_y rand_z -0.664 3.36e- 1     5 NA      4.47e- 1 3.36e- 1 5.04e- 1
-#> 4 down_x up_y   rand_z  1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
-#> 5 down_x down_y rand_z -1     3.33e-16     5 NA      7.49e-16 5.00e-16 5.00e-16
-#> 6 down_x rand_y rand_z  0.664 3.36e- 1     5 NA      4.47e- 1 3.36e- 1 5.04e- 1
-#> 7 rand_x up_y   rand_z -0.603 3.97e- 1     5 NA      4.47e- 1 5.95e- 1 3.97e- 1
-#> 8 rand_x down_y rand_z  0.603 3.97e- 1     5 NA      4.47e- 1 5.95e- 1 3.97e- 1
-#> 9 rand_x rand_y rand_z  0.210 7.90e- 1     5 NA      7.90e- 1 7.90e- 1 7.90e- 1
-```
-
-### Naming Outputs
-
-All `coracle` functions include `*_name` arguments to override the
-default column names (“x”, “y”, and “z”) in the output.
-
-For example:
-
-``` r
-
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(
-  x = dfx,
-  y = dfy,
-  x_name = "FIRST",
-  y_name = "SECOND"
+cdo <- coracle_data$new(
+  data = df,
+  # Since `coracle_data` implements `tidyselect`, column(s) can be selected....
+  # ... with unquoted names...
+  grps = first_col,
+  # ... with character vectors...
+  join = "second_col", 
+  # ... with tidyselect helpers...
+  vals = starts_with("third")
+  # ... and much more. Refer to `tidyselect` for details.
 )
-#> ℹ Joining `x` and `y` by the following columns:
-#> • "i" = "i"
-#> ! Override by providing `xy_join` argument.
-#> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 9
-#>   FIRST  SECOND   rho        p     n message  q_FIRST q_SECOND        q
-#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y   0.9 3.74e- 2     5 NA      3.74e- 2 5.61e- 2 5.61e- 2
-#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y  -0.9 3.74e- 2     5 NA      3.74e- 2 5.61e- 2 5.61e- 2
-#> 7 rand_x up_y    -0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
-#> 8 rand_x down_y   0.3 6.24e- 1     5 NA      6.24e- 1 6.24e- 1 6.24e- 1
-#> 9 rand_x rand_y  -0.5 3.91e- 1     5 NA      6.24e- 1 3.91e- 1 5.03e- 1
+
+cdo # This is the `coracle_data` object
+#> <coracle_data>
+#>   Public:
+#>     children: list
+#>     chunk: NULL
+#>     chunk_flags: NULL
+#>     chunks: active binding
+#>     clone: function (deep = FALSE) 
+#>     corr_data: active binding
+#>     corr_grps: active binding
+#>     corr_join: active binding
+#>     corr_vals: active binding
+#>     data: active binding
+#>     grps_cols: first_col
+#>     grps_vals: NULL
+#>     id: 65dbb7c
+#>     initialize: function (data = NULL, grps = NULL, join = NULL, vals = NULL, 
+#>     join_col: second_col
+#>     join_vals: a b c d e f g h i j
+#>     leaves: active binding
+#>     leaves_invalid: active binding
+#>     leaves_valid: active binding
+#>     other_cols: 
+#>     vals_col: third_col
+#>     version: 1.0.0
 ```
 
-Observe:
+#### Basics of `coracle_data` objects
 
-- The `q_*` columns of the output have also been renamed.
-
-### Specifying Joins
-
-By default, all `coracle` functions which accept two or more data frames
-as input attempt to join the data frames by columns of the same name
-found in each data frame.
-
-For example:
+`coracle_data` objects store data in a tree structure based on the
+grouping column(s). The object the initialization creates is the “root
+node” of a tree. It doesn’t actually contain any data!
 
 ``` r
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx, y = dfy)
-#> ℹ Joining `x` and `y` by the following columns:
-#> • "i" = "i"
-#> ! Override by providing `xy_join` argument.
-#> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 9
-#>   x      y        rho        p     n message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y  -0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
-#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y   0.7 1.88e- 1     5 NA      1.88e- 1 2.82e- 1 2.82e- 1
-#> 7 rand_x up_y    -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 8 rand_x down_y   0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
-#> 9 rand_x rand_y  -0.6 2.85e- 1     5 NA      8.54e- 1 2.85e- 1 3.66e- 1
+cdo$chunk # A "chunk" is the stored unit of data in a node
+#> NULL
 ```
 
-Observe:
+Instead, the root node contains a list of “child nodes”. In this
+example, there are three children corresponding to the values in the
+data used for grouping (“A”, “B”, and “C”).
 
-- The function provides a message reporting on how the columns will be
-  joined.
+``` r
+names(cdo$children)
+#> [1] "A" "B" "C"
+```
 
-In some scenarios, this default behavior is not desirable. For example:
+Each child node is itself a `coracle_data` object, *almost* identical to
+it’s parent. Let’s take a closer look at one:
 
-- There may be one or more columns between the two data frames which
-  share a name but would be inappropriate to use for joining.
-- There are no columns between the two data frames which share names.
+``` r
+cdo$children$A
+#> <coracle_data>
+#>   Public:
+#>     children: NULL
+#>     chunk: tbl_df, tbl, data.frame
+#>     chunk_flags: NULL
+#>     chunks: active binding
+#>     clone: function (deep = FALSE) 
+#>     corr_data: active binding
+#>     corr_grps: active binding
+#>     corr_join: active binding
+#>     corr_vals: active binding
+#>     data: active binding
+#>     grps_cols: first_col
+#>     grps_vals: list
+#>     id: 0e77864
+#>     initialize: function (data = NULL, grps = NULL, join = NULL, vals = NULL, 
+#>     join_col: second_col
+#>     join_vals: a b c d e f g h i j
+#>     leaves: active binding
+#>     leaves_invalid: active binding
+#>     leaves_valid: active binding
+#>     other_cols: 
+#>     vals_col: third_col
+#>     version: 1.0.0
+```
 
-To override this default behavior, provide a [`dplyr::join_by()` join
-specification](https://dplyr.tidyverse.org/reference/join_by.html) to
-the appropriate `xy_join` and/or `xz_join` argument.
+Can you spot the differences?
 
-For example:
+Unlike the root node, in this case the children do contain data!
+
+Data is only stored in “leaf nodes” - the nodes at the extremities of
+the tree - in discrete “chunks”.
+
+If we look at all three children and their chunks we can see the entire
+original data frame has been split in three based on the value in
+“first_col”:
+
+``` r
+cdo$children$A$chunk
+#> # A tibble: 10 × 3
+#>    first_col second_col third_col
+#>    <chr>     <chr>          <dbl>
+#>  1 A         a              0.482
+#>  2 A         b              0.773
+#>  3 A         c              0.471
+#>  4 A         d              0.421
+#>  5 A         e              0.529
+#>  6 A         f              0.675
+#>  7 A         g              0.895
+#>  8 A         h              0.941
+#>  9 A         i              0.768
+#> 10 A         j              0.937
+
+cdo$children$B$chunk
+#> # A tibble: 10 × 3
+#>    first_col second_col third_col
+#>    <chr>     <chr>          <dbl>
+#>  1 B         a            0.0512 
+#>  2 B         b            0.00336
+#>  3 B         c            0.257  
+#>  4 B         d            0.334  
+#>  5 B         e            0.0547 
+#>  6 B         f            0.311  
+#>  7 B         g            0.169  
+#>  8 B         h            0.930  
+#>  9 B         i            0.133  
+#> 10 B         j            0.530
+
+cdo$children$C$chunk
+#> # A tibble: 10 × 3
+#>    first_col second_col third_col
+#>    <chr>     <chr>          <dbl>
+#>  1 C         a             0.825 
+#>  2 C         b             0.528 
+#>  3 C         c             0.0993
+#>  4 C         d             0.609 
+#>  5 C         e             0.663 
+#>  6 C         f             0.416 
+#>  7 C         g             0.104 
+#>  8 C         h             0.298 
+#>  9 C         i             0.306 
+#> 10 C         j             0.212
+```
+
+We can actually retrieve the entire, original data frame using `$data`.
+This is how you pull data out of a `coracle_data` object.
+
+Note: Initialization may involve transformation and renaming. When you
+use `$data` it will reflect those changes. All the data will be there,
+but not necessarily in the same format as the original.
+
+That note doesn’t apply to this example, but it’s an important point to
+keep in mind.
 
 ``` r
 
-library(dplyr)
+output <- cdo$data
 
-dfx <- data.frame(i_x = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i_y = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx,
-         y = dfy,
-         xy_join = join_by(i_x == i_y))
-#> ℹ Joining `x` and `y` by the following columns:
-#> • "i_x" = "i_y"
-#> ! Override by providing `xy_join` argument.
-#> ℹ Refer to documentation for the `by` argument of dplyr mutating joins (<https://dplyr.tidyverse.org/reference/mutate-joins.html>).
-#> # A tibble: 9 × 9
-#>   x      y        rho        p     n message      q_x      q_y        q
-#>   <chr>  <chr>  <dbl>    <dbl> <int> <lgl>      <dbl>    <dbl>    <dbl>
-#> 1 up_x   up_y     1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 2 up_x   down_y  -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 3 up_x   rand_y   0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
-#> 4 down_x up_y    -1   1.12e-23     5 NA      1.69e-23 1.69e-23 2.53e-23
-#> 5 down_x down_y   1   3.97e-24     5 NA      1.19e-23 1.19e-23 1.79e-23
-#> 6 down_x rand_y  -0.8 1.04e- 1     5 NA      1.04e- 1 1.56e- 1 1.56e- 1
-#> 7 rand_x up_y    -0.6 2.85e- 1     5 NA      4.27e- 1 2.85e- 1 3.20e- 1
-#> 8 rand_x down_y   0.6 2.85e- 1     5 NA      4.27e- 1 2.85e- 1 3.20e- 1
-#> 9 rand_x rand_y  -0.1 8.73e- 1     5 NA      8.73e- 1 8.73e- 1 8.73e- 1
+output
+#> # A tibble: 30 × 3
+#>    first_col second_col third_col
+#>    <chr>     <chr>          <dbl>
+#>  1 A         a              0.482
+#>  2 A         b              0.773
+#>  3 A         c              0.471
+#>  4 A         d              0.421
+#>  5 A         e              0.529
+#>  6 A         f              0.675
+#>  7 A         g              0.895
+#>  8 A         h              0.941
+#>  9 A         i              0.768
+#> 10 A         j              0.937
+#> # ℹ 20 more rows
 ```
 
-Observe:
+The `coracle_data` object also contains other useful information:
 
-- Columns used to join data frames are excluded from the calculations.
-  - Since we joined by the “up” columns of each data frame (`u1` and
-    `u2`), only the “down” (`d1`, `d2`) and “random” (`r1`, `r2`)
-    columns are included in the result, for a total of 4 combinations.
-- The `xy_join` argument expects the output of `dplyr::join_by()` which
-  can be assigned to another variable which is passed to the function or
-  done directly in the `coracle` function call (as shown).
+``` r
+cdo$version # The version of `coracle` used to generate the object
+#> [1] "1.0.0"
 
-### Using `future` to Parallelize Calculations
+cdo$id # A hashed id to distinguish between objects
+#> [1] "65dbb7c"
 
-By default, all `coracle` functions work with `future` plans in order to
-parallelize the calculation.
+cdo$grps_cols # List of grouping column(s)
+#> [1] "first_col"
 
-For example:
+cdo$join_col # The joining column
+#> [1] "second_col"
+
+cdo$join_vals # The values found in the joining column
+#>  [1] "a" "b" "c" "d" "e" "f" "g" "h" "i" "j"
+
+cdo$vals_col # The values column
+#> [1] "third_col"
+```
+
+That’s enough to start with.
+
+### Correlating with `coracle`
+
+Preparing the `coracle_data` objects for `coracle` is the hardest part.
+Once the data is ready, it’s a simple matter to call the function.
+
+Let’s create a second `coracle_data` object, this one using “X”, “Y”,
+and “Z”:
+
+``` r
+df2 <- expand_grid(df2_first = LETTERS[24:26],
+                  df2_second = letters[1:10]) %>%
+  mutate(df2_third = runif(nrow(.)))
+
+df2
+#> # A tibble: 30 × 3
+#>    df2_first df2_second df2_third
+#>    <chr>     <chr>          <dbl>
+#>  1 X         a            0.336  
+#>  2 X         b            0.232  
+#>  3 X         c            0.972  
+#>  4 X         d            0.431  
+#>  5 X         e            0.795  
+#>  6 X         f            0.799  
+#>  7 X         g            0.111  
+#>  8 X         h            0.120  
+#>  9 X         i            0.700  
+#> 10 X         j            0.00691
+#> # ℹ 20 more rows
+
+cdo2 <- coracle_data$new(data = df2,
+                         grps = 1,
+                         join = 2,
+                         vals = 3)
+
+cdo2
+#> <coracle_data>
+#>   Public:
+#>     children: list
+#>     chunk: NULL
+#>     chunk_flags: NULL
+#>     chunks: active binding
+#>     clone: function (deep = FALSE) 
+#>     corr_data: active binding
+#>     corr_grps: active binding
+#>     corr_join: active binding
+#>     corr_vals: active binding
+#>     data: active binding
+#>     grps_cols: df2_first
+#>     grps_vals: NULL
+#>     id: 490a009
+#>     initialize: function (data = NULL, grps = NULL, join = NULL, vals = NULL, 
+#>     join_col: df2_second
+#>     join_vals: a b c d e f g h i j
+#>     leaves: active binding
+#>     leaves_invalid: active binding
+#>     leaves_valid: active binding
+#>     other_cols: 
+#>     vals_col: df2_third
+#>     version: 1.0.0
+```
+
+Now that we have two `coracle_data` objects, we can put them into
+`coracle` to do pairwise correlation and we’ll get another
+`coracle_data` object in response. We can retrieve the data with
+`$data`.
 
 ``` r
 
-n <- 100
+cdo_output <- coracle(cdo, cdo2)
 
-dfx <- data.frame(i = as.character(1:n),
-                  replicate(n, runif(n)))
-dfy <- data.frame(i = as.character(1:n),
-                  replicate(n, runif(n)))
-
-library(future)
-library(tictoc)
-
-plan(sequential)
-
-tic(msg = "Sequential function call")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-#> Sequential function call: 5.78 sec elapsed
-
-plan(multisession) # Maximum workers available
-
-tic(msg = "Parallel function call with maximum workers available")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-#> Parallel function call with maximum workers available: 6.09 sec elapsed
-
-plan(multisession, workers = 6)
-
-tic(msg = "Parallel function call with 6 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-#> Parallel function call with 6 workers: 10.03 sec elapsed
-
-plan(multisession, workers = 4)
-
-tic(msg = "Parallel function call with 4 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-#> Parallel function call with 4 workers: 8.43 sec elapsed
-
-plan(multisession, workers = 2)
-
-tic(msg = "Parallel function call with 2 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-#> Parallel function call with 2 workers: 5.67 sec elapsed
-
-plan(sequential) # Reset plan
+cdo_output$data
+#>   first_col df2_first          rho          p  n message
+#> 1         A         X -0.721212121 0.01857316 10    <NA>
+#> 2         A         Y -0.418181818 0.22911284 10    <NA>
+#> 3         A         Z -0.030303030 0.93377296 10    <NA>
+#> 4         B         X -0.200000000 0.57958400 10    <NA>
+#> 5         B         Y -0.030303030 0.93377296 10    <NA>
+#> 6         B         Z  0.006060606 0.98674291 10    <NA>
+#> 7         C         X  0.163636364 0.65147734 10    <NA>
+#> 8         C         Y  0.090909091 0.80277173 10    <NA>
+#> 9         C         Z  0.490909091 0.14965567 10    <NA>
 ```
-
-Observe:
-
-- There is no one-size-fits-all plan and more workers are not always
-  faster. Parallelization incurs overhead and, depending on the size of
-  the data and the number of cores available, a faster plan may require
-  some planning and/or trial and error.
