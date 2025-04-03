@@ -1,64 +1,22 @@
-validate_coracle_input <- function(input,
-                                   arg = caller_arg(input),
-                                   call = caller_env()) {
-  if (!is.null(input) && !("coracle_data" %in% class(input))) {
-    cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_obj}."))
-  }
+stat_name <- list(spearman = "rho",
+                  kendall = "tau",
+                  pearson = "cor")
 
-}
-
-corr_result <- function(a_grps,
-                        b_grps = NA_character_,
-                        c_grps = NA_character_,
-                        stat_value = NA,
-                        p = NA,
-                        n = NA,
-                        message = NA_character_,
-                        method
-){
-
-  stat_name <- list(spearman = "rho",
-                    kendall = "tau",
-                    pearson = "cor")
-
-  result_front <- list(a = name_a,
-                 b = name_b)
-
-  if(!is.na(name_c)){
-    result_front <- c(result_front, c = name_c)
-  }
-
-  statistic <- stat_value
-  names(statistic) <- stat_name[[method]]
-
-  result_back <- list(
-    p = p,
-    n = n,
-    message = message
-  )
-
-  c(result_front, statistic, result_back)
-
-}
-
-#' Title
+#' Correlation of Tidy Data
 #'
-#' @param x
-#' @param y
-#' @param z
-#' @param ...
-#' @param method
+#' @param x A `coracle_data` object for correlation.
+#' @param y (Optional) A `coracle_data` object for correlation.
+#' @param z (Optional) A `coracle_data` object for correlation.
+#' @param ... Unused
+#' @param method The correlation method ("spearman", "pearson", or "kendall")
 #'
-#' @returns
+#' @returns A `coracle_data` object with correlation results.
 #' @export
-#'
-#' @examples
 coracle <- function(x,
                     y = NULL,
                     z = NULL,
                     ...,
                     method = "spearman") {
-
   validate_coracle_input(x)
   validate_coracle_input(y)
   validate_coracle_input(z)
@@ -69,62 +27,135 @@ coracle <- function(x,
 
   if (!is.null(x) && !is.null(y) && !is.null(z)) {
     cli_abort(c("x" = "Pairwise partial correlation has not been implemented yet"))
-    result <- pairwise_partial_correlation(x, y, z, method)
+    #result <- pairwise_partial_correlation(x, y, z, method)
   } else if (!is.null(x) && !is.null(y)) {
     result <- pairwise_correlation(x, y, method)
+
+    return (coracle_data$new(data = result,
+                     grps = x$grps_cols,
+                     join = tail(y$grps_cols,n=1),
+                     vals = stat_name[[method]]))
+
   } else if (!is.null(x)) {
     cli_abort(c("x" = "Autocorrelation has not been implemented yet"))
-    result <- autocorrelation(x, method)
+    #result <- autocorrelation(x, method)
   } else {
     cli_abort(c("x" = "This case should be unreachable!"))
   }
 
+  result
+
 }
 
-pairwise_correlation <- function(x,y, method){
+#' (Internal) Check non-null inputs for `coracle_data` objects
+#'
+#' @param input The input value.
+#' @param arg The input argument.
+#' @param call The caller environment.
+#'
+#' @returns Invisibly.
+validate_coracle_input <- function(input,
+                                   arg = caller_arg(input),
+                                   call = caller_env()) {
+  if (!is.null(input) && !("coracle_data" %in% class(input))) {
+    cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_obj}."))
+  }
 
-  if(!is_joins_valid(x,y))
+}
+
+#' (Internal) assemble correlation results in data.frame.
+#'
+#' @param a A `coracle_data` object used in a correlation.
+#' @param b A `coracle_data` object used in a correlation.
+#' @param c A `coracle_data` object used in a correlation.
+#' @param stat_value The estimated correlation result.
+#' @param p The p-value of the correlation result.
+#' @param n The number of observations used in a correlation.
+#' @param message An informative message about the correlation result.
+#' @param method The correlation method ("spearman", "pearson", or "kendall")
+#'
+#' @returns A data.frame of correlation results.
+corr_result <- function(a,
+                        b = NULL,
+                        c = NULL,
+                        stat_value = NA,
+                        p = NA,
+                        n = NA_integer_,
+                        message = NA_character_,
+                        method) {
+
+
+
+  statistic <- stat_value
+  names(statistic) <- stat_name[[method]]
+
+  as.data.frame(
+    c(
+      a$grps_vals,
+      b$grps_vals,
+      c$grps_vals,
+      statistic,
+      p = as.numeric(p),
+      n = as.integer(n),
+      message = message
+    )
+  )
+
+}
+
+
+
+#' (Internal) Pairwise correlation of between two `coracle_data` objects.
+#'
+#' @param x A `coracle_data` object for correlation.
+#' @param y A `coracle_data` object for correlation.
+#' @param method The correlation method ("spearman", "pearson", or "kendall")
+#'
+#' @returns A data.frame of correlation results.
+pairwise_correlation <- function(x, y, method) {
+  if (length(intersect(x$join_vals, y$join_vals)) < 3)
     cli_abort(c("x" = "Not enough overlap in join values to run correlation."))
 
-  leaf_pairs <- expand_grid(a = x$leaves, b = y$leaves) |> mutate(method = method) |> slice_sample(n=100)
+  leaf_pairs <- expand_grid(a = x$leaves_valid, b = y$leaves_valid) |>
+    mutate(method = method)
 
-  future_pmap(leaf_pairs,
-              correlate)
+  if (nrow(leaf_pairs) == 0)
+    cli_abort(c("x" = "Not enough valid chunks to run correlation."))
+
+  future_pmap(leaf_pairs, correlate) |>
+    list_rbind()
 }
 
-is_joins_valid <- function(a,b){
-  length(intersect(a$join_vals, b$join_vals)) >= 3 # Min. 3 for correlation
-}
-
-
-
-is_values_constant <- function(a_data, a){
-
-  a_data |>
-    pluck(a$vals_col) |>
-    unique() |>
-    length() == 1
-
-}
-
+#' (Internal) Correlate data of `coracle_data` objects.
+#'
+#' @param a A `coracle_data` object for correlation.
+#' @param b A `coracle_data` object for correlation.
+#' @param method The correlation method ("spearman", "pearson", or "kendall")
+#'
+#' @returns A `corr_result` data.frame.
 correlate <- function(a, b, method) {
-
-  if(!is_joins_valid(a,b))
-    return()
-
   # avoids `join_by`'s input validation
-  a_join <- a$join_col
-  b_join <- b$join_col
+  a_join <- a$corr_join
+  b_join <- b$corr_join
 
-  a_suffix <- paste0("_", a$id)
-  b_suffix <- paste0("_", b$id)
-
-  corr_data <- full_join(a$data,
-                         b$data,
-                         by = join_by(!!sym(a_join) == !!sym(b_join)),
-                         suffix = c(a_suffix, b_suffix)) |>
+  corr_data <- full_join(a$corr_data,
+                         b$corr_data,
+                         by = join_by(!!sym(a_join) == !!sym(b_join))) |>
     drop_na()
 
-  corr_data
+  corr <- cor.test(
+    x = corr_data[[a$corr_vals]],
+    y = corr_data[[b$corr_vals]],
+    method = method,
+    exact = FALSE
+  )
 
+  corr_result(
+    a,
+    b,
+    stat_value = corr$estimate,
+    p = corr$p.value,
+    n = nrow(corr_data),
+    method = method
+  )
 }

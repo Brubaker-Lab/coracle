@@ -1,27 +1,27 @@
-library(tidyverse)
-
-df1 <- expand_grid(mbio = LETTERS[1:5], gene = letters[1:26]) %>%
-  mutate(
-    up = row_number(),
-    down = nrow(.) - row_number(),
-    random = runif(nrow(.))
+df1 <- tidyr::expand_grid(mbio = LETTERS[1:5], gene = letters[1:26]) %>%
+  dplyr::mutate(
+    up = dplyr::row_number(),
+    down = nrow(.) - dplyr::row_number(),
+    random = runif(nrow(.)),
+    const = 3
   ) |>
-  rowwise() |>
-  mutate(random_up = runif(1, max = up),
-         random_down = runif(1, max = down)) |>
-  ungroup()
+  dplyr::rowwise() |>
+  dplyr::mutate(random_up = rnorm(1, mean = up),
+         random_down = rnorm(1, mean = down)) |>
+  dplyr::ungroup()
 
 
-df2 <- expand_grid(drug = LETTERS[22:26], gene = letters[1:26]) %>%
-  mutate(
-    up = row_number(),
-    down = nrow(.) - row_number(),
-    random = runif(nrow(.))
+df2 <- tidyr::expand_grid(drug = LETTERS[22:26], gene = letters[1:26]) %>%
+  dplyr::mutate(
+    up = dplyr::row_number(),
+    down = nrow(.) - dplyr::row_number(),
+    random = runif(nrow(.)),
+    const = 3
   ) |>
-  rowwise() |>
-  mutate(random_up = runif(1, max = up),
+  dplyr::rowwise() |>
+  dplyr::mutate(random_up = runif(1, max = up),
          random_down = runif(1, max = down)) |>
-  ungroup()
+  dplyr::ungroup()
 
 test_that("coracle_data.R", {
   expect_true(exists("coracle_data")) # Prevent empty test warning

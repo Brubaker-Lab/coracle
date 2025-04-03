@@ -2,9 +2,8 @@
 % Please edit documentation in R/coracle-package.R
 \docType{package}
 \name{coracle-package}
-\alias{coracle}
 \alias{coracle-package}
-\title{coracle: Correlations for Columns of Tidy Data}
+\title{coracle: Correlation Engine}
 \description{
 Provices functions for correlating data stored in columns.
 }

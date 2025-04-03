@@ -1,4 +1,4 @@
-# Erroneous Inputs
+# Arg `data` is a data.frame
 
     Code
       f$new(NULL)
@@ -22,7 +22,7 @@
       Error in `f$new()`:
       x `data` requires a <data.frame>.
 
----
+# Arg `join` selects exactly one column
 
     Code
       f$new(mtcars, join = NULL, disp, mpg)
@@ -47,7 +47,7 @@
       ! Can't select columns that don't exist.
       x Column `abcd` doesn't exist.
 
----
+# Arg `vals` selects one or more column(s)
 
     Code
       f$new(mtcars, cyl, vals = NULL, mpg)
@@ -64,7 +64,7 @@
       ! Can't select columns that don't exist.
       x Column `abcd` doesn't exist.
 
----
+# Arg `grps` selects one or more column(s)
 
     Code
       f$new(mtcars, cyl, disp, grps = NULL)

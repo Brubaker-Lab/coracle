@@ -43,222 +43,151 @@ After installation, load the library with:
 library(coracle)
 ```
 
-## Examples
+## 1.X.X
 
-The two main functions of `coracle` (`corr_col()` and `pcor_col()`) are written to accommodate different cases depending on the inputs.
+This package facilitates correlation of data through the following:
 
-### One Data Frame (`corr_col()`)
+- Data handling, tree data structures, and pass-by-reference with `R6`.
+- Parallelization via `furrr` and `future`
 
-When `corr_col()` receives a single data frame (the required `x` argument) it does *pairwise correlation between all pairs of numeric columns within that data frame*.
+Data must be loaded into `coracle_data` objects with `coracle_data$new()` *before* it can be passed into `coracle()`. The `coracle_data` object initialization annotates, validates, and organizes the data for correlation. It requires the user to identify which column(s) of data to use for grouping, joining, and correlation.
 
-Note: `pcor_col()` does not accept a single data frame.
+### Preparing data with `coracle_data`
 
-For example:
+#### Creating a `coracle_data` object
+
+A `coracle_data` object begins with a `data.frame`:
 
 ```{r}
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
+library(tidyverse)
 
-corr_col(x = dfx)
+df <- expand_grid(first_col = LETTERS[1:3],
+                  second_col = letters[1:10]) %>%
+  mutate(third_col = runif(nrow(.)))
+
+df
 ```
 
-Note:
+During initialization the user will indicate:
 
--   Correlations are calculated for every combination of numeric columns.
--   Non-numeric columns (such as `index`) are excluded.
--   Correlations which could not be calculated return `NA` and a brief explanatory `message` (relayed from `stats::cor_test()`).
--   False discovery rate (FDR) q-values are automatically calculated.
-
-### Two Data Frames (`corr_col()`)
-
-When `corr_col()` receives two data frames (the `x` and `y` arguments) it does *pairwise correlation between all pairs of numeric columns between the two data frames*.
-
-For example:
-
-```{r}
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx, y = dfy)
-```
-
-Observe:
-
--   Every combination of a column from `x` and a column from `y` have their correlation calculated. No columns from `x` are correlated with other `x` columns. The same is true for `y`.
-    -   Since there are three numeric columns in each data frame above, there are 9 total combinations in the result.
--   There are two additional FDR `q` columns: `q_x` and `q_y` (the default names). These are calculated *per grouping* of the `x` and `y` values, respectively. If `x` or `y` are renamed with `x_name` or `y_name` arguments, the `q_*` columns will be renamed to match.
-
-### Three Data Frames (`pcor_col()`)
-
-When `pcor_col()` receives three data frames (the `x`, `y`, and `z` arguments) it does *pairwise partial correlation between all pairs of numeric columns between `x` and `y` using all numeric columns of `z` as covariates*.
-
-For example:
+- `grps` - The "grouping column(s)" which identify the subject of interest (i.e. microbes, drugs)
+- `join` - The "joining column" which will be used to join different datasets together for correlation (i.e. genes).
+- `vals` - The "values column(s)" which contains the values for correlation.
 
 ```{r}
 
-library(dplyr)
-
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-dfz <- data.frame(i = as.character(1:5),
-                  rand_z = runif(5))
-
-pcor_col(x = dfx,
-         y = dfy,
-         z = dfz)
-```
-
-### Naming Outputs
-
-All `coracle` functions include `*_name` arguments to override the default column names ("x", "y", and "z") in the output.
-
-For example:
-
-```{r}
-
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(
-  x = dfx,
-  y = dfy,
-  x_name = "FIRST",
-  y_name = "SECOND"
+cdo <- coracle_data$new(
+  data = df,
+  # Since `coracle_data` implements `tidyselect`, column(s) can be selected....
+  # ... with unquoted names...
+  grps = first_col,
+  # ... with character vectors...
+  join = "second_col", 
+  # ... with tidyselect helpers...
+  vals = starts_with("third")
+  # ... and much more. Refer to `tidyselect` for details.
 )
+
+cdo # This is the `coracle_data` object
+
 ```
 
-Observe:
+#### Basics of `coracle_data` objects
 
--   The `q_*` columns of the output have also been renamed.
-
-### Specifying Joins
-
-By default, all `coracle` functions which accept two or more data frames as input attempt to join the data frames by columns of the same name found in each data frame.
-
-For example:
+`coracle_data` objects store data in a tree structure based on the grouping column(s). The object the initialization creates is the "root node" of a tree. It doesn't actually contain any data!
 
 ```{r}
-dfx <- data.frame(i = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx, y = dfy)
+cdo$chunk # A "chunk" is the stored unit of data in a node
 ```
-
-Observe:
-
--   The function provides a message reporting on how the columns will be joined.
-
-In some scenarios, this default behavior is not desirable. For example:
-
--   There may be one or more columns between the two data frames which share a name but would be inappropriate to use for joining.
--   There are no columns between the two data frames which share names.
-
-To override this default behavior, provide a [`dplyr::join_by()` join specification](https://dplyr.tidyverse.org/reference/join_by.html) to the appropriate `xy_join` and/or `xz_join` argument.
-
-For example:
+Instead, the root node contains a list of "child nodes". In this example, there are three children corresponding to the values in the data used for grouping ("A", "B", and "C").
 
 ```{r}
-
-library(dplyr)
-
-dfx <- data.frame(i_x = as.character(1:5),
-                  up_x = 1:5,
-                  down_x = 5:1,
-                  rand_x = runif(5))
-dfy <- data.frame(i_y = as.character(1:5),
-                  up_y = 1:5,
-                  down_y = 5:1,
-                  rand_y = runif(5))
-
-corr_col(x = dfx,
-         y = dfy,
-         xy_join = join_by(i_x == i_y))
+names(cdo$children)
 ```
 
-Observe:
+Each child node is itself a `coracle_data` object, *almost* identical to it's parent. Let's take a closer look at one:
 
--   Columns used to join data frames are excluded from the calculations.
-    -   Since we joined by the "up" columns of each data frame (`u1` and `u2`), only the "down" (`d1`, `d2`) and "random" (`r1`, `r2`) columns are included in the result, for a total of 4 combinations.
--   The `xy_join` argument expects the output of `dplyr::join_by()` which can be assigned to another variable which is passed to the function or done directly in the `coracle` function call (as shown).
+```{r}
+cdo$children$A
+```
 
-### Using `future` to Parallelize Calculations
+Can you spot the differences?
 
-By default, all `coracle` functions work with `future` plans in order to parallelize the calculation.
+Unlike the root node, in this case the children do contain data!
 
-For example:
+Data is only stored in "leaf nodes" - the nodes at the extremities of the tree - in discrete "chunks".
+
+If we look at all three children and their chunks we can see the entire original data frame has been split in three based on the value in "first_col":
+
+```{r}
+cdo$children$A$chunk
+
+cdo$children$B$chunk
+
+cdo$children$C$chunk
+```
+
+We can actually retrieve the entire, original data frame using `$data`. This is how you pull data out of a `coracle_data` object.
+
+Note: Initialization may involve transformation and renaming. When you use `$data` it will reflect those changes. All the data will be there, but not necessarily in the same format as the original.
+
+That note doesn't apply to this example, but it's an important point to keep in mind.
 
 ```{r}
 
-n <- 100
+output <- cdo$data
 
-dfx <- data.frame(i = as.character(1:n),
-                  replicate(n, runif(n)))
-dfy <- data.frame(i = as.character(1:n),
-                  replicate(n, runif(n)))
-
-library(future)
-library(tictoc)
-
-plan(sequential)
-
-tic(msg = "Sequential function call")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-
-plan(multisession) # Maximum workers available
-
-tic(msg = "Parallel function call with maximum workers available")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-
-plan(multisession, workers = 6)
-
-tic(msg = "Parallel function call with 6 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-
-plan(multisession, workers = 4)
-
-tic(msg = "Parallel function call with 4 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-
-plan(multisession, workers = 2)
-
-tic(msg = "Parallel function call with 2 workers")
-result <- suppressMessages(corr_col(x = dfx, y = dfy, xy_join = join_by(i)))
-toc()
-
-plan(sequential) # Reset plan
+output
 
 ```
 
-Observe:
+The `coracle_data` object also contains other useful information:
 
-- There is no one-size-fits-all plan and more workers are not always faster. Parallelization incurs overhead and, depending on the size of the data and the number of cores available, a faster plan may require some planning and/or trial and error. 
+```{r}
+cdo$version # The version of `coracle` used to generate the object
+
+cdo$id # A hashed id to distinguish between objects
+
+cdo$grps_cols # List of grouping column(s)
+
+cdo$join_col # The joining column
+
+cdo$join_vals # The values found in the joining column
+
+cdo$vals_col # The values column
+```
+
+That's enough to start with.
+
+### Correlating with `coracle`
+
+Preparing the `coracle_data` objects for `coracle` is the hardest part. Once the data is ready, it's a simple matter to call the function.
+
+Let's create a second `coracle_data` object, this one using "X", "Y", and "Z":
+
+```{r}
+df2 <- expand_grid(df2_first = LETTERS[24:26],
+                  df2_second = letters[1:10]) %>%
+  mutate(df2_third = runif(nrow(.)))
+
+df2
+
+cdo2 <- coracle_data$new(data = df2,
+                         grps = 1,
+                         join = 2,
+                         vals = 3)
+
+cdo2
+```
+
+Now that we have two `coracle_data` objects, we can put them into `coracle` to do pairwise correlation and we'll get another `coracle_data` object in response. We can retrieve the data with `$data`.
+
+```{r}
+
+cdo_output <- coracle(cdo, cdo2)
+
+cdo_output$data
+
+
+```
+
