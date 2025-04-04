@@ -3,7 +3,7 @@
 \docType{package}
 \name{coracle-package}
 \alias{coracle-package}
-\title{coracle: Correlation Engine}
+\title{coracle: A Correlation Engine}
 \description{
 Provices functions for correlating data stored in columns.
 }
