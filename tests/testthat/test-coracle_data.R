@@ -1,3 +1,5 @@
+options(rlib_message_verbosity = "quiet")
+
 df1 <- tidyr::expand_grid(mbio = LETTERS[1:5], gene = letters[1:26]) %>%
   dplyr::mutate(
     up = dplyr::row_number(),
@@ -21,6 +23,18 @@ df2 <- tidyr::expand_grid(drug = LETTERS[22:26], gene = letters[1:26]) %>%
   dplyr::rowwise() |>
   dplyr::mutate(random_up = runif(1, max = up),
          random_down = runif(1, max = down)) |>
+  dplyr::ungroup()
+
+dfna <- tidyr::expand_grid(drug = c(LETTERS[23:26],NA), gene = letters[1:26]) %>%
+  dplyr::mutate(
+    up = dplyr::row_number(),
+    down = nrow(.) - dplyr::row_number(),
+    random = runif(nrow(.)),
+    const = 3
+  ) |>
+  dplyr::rowwise() |>
+  dplyr::mutate(random_up = runif(1, max = up),
+                random_down = runif(1, max = down)) |>
   dplyr::ungroup()
 
 test_that("coracle_data.R", {
@@ -60,6 +74,15 @@ test_that("coracle_data.R", {
       })
 
 
+
+    })
+
+    test_that("Correct Inputs",{
+
+      expect_no_error(f$new(df1,
+                            grps = mbio,
+                            join = gene,
+                            vals = where(is.numeric)))
 
     })
 

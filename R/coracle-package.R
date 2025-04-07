@@ -11,7 +11,7 @@
 #' @importFrom stringr str_replace str_remove str_sub
 #' @importFrom utils tail
 #' @importFrom tidyselect eval_select
-#' @importFrom tidyr pivot_longer expand_grid drop_na
+#' @importFrom tidyr pivot_longer expand_grid drop_na replace_na
 #' @importFrom purrr map set_names list_flatten list_rbind compact
 #' @importFrom utils packageVersion
 ## usethis namespace: end

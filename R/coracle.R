@@ -29,6 +29,7 @@ coracle <- function(x,
     cli_abort(c("x" = "Pairwise partial correlation has not been implemented yet"))
     #result <- pairwise_partial_correlation(x, y, z, method)
   } else if (!is.null(x) && !is.null(y)) {
+
     result <- pairwise_correlation(x, y, method)
 
     return (coracle_data$new(data = result,
@@ -116,14 +117,19 @@ pairwise_correlation <- function(x, y, method) {
   if (length(intersect(x$join_vals, y$join_vals)) < 3)
     cli_abort(c("x" = "Not enough overlap in join values to run correlation."))
 
+  invalid_corrs <- c(x$leaves_invalid, y$leaves_invalid) |>
+    map(\(o) corr_result(o,message = paste(o$chunk_flags), method = method)) |> list_rbind()
+
   leaf_pairs <- expand_grid(a = x$leaves_valid, b = y$leaves_valid) |>
     mutate(method = method)
 
   if (nrow(leaf_pairs) == 0)
     cli_abort(c("x" = "Not enough valid chunks to run correlation."))
 
-  future_pmap(leaf_pairs, correlate) |>
+  valid_corrs <- future_pmap(leaf_pairs, correlate, .progress = T) |>
     list_rbind()
+
+  bind_rows(valid_corrs, invalid_corrs)
 }
 
 #' (Internal) Correlate data of `coracle_data` objects.

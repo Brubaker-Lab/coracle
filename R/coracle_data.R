@@ -72,6 +72,7 @@ coracle_data <- R6::R6Class(
 
 
       self$id <- hash(as.numeric(Sys.time())) |> str_sub(-7)
+
       self$version <- as.character(packageVersion("coracle"))
 
       ### Initial data check ------------
@@ -140,11 +141,9 @@ coracle_data <- R6::R6Class(
           cli_abort(c("x" = "{.arg labl_cols} requires a {.cls character} scalar."),
                     call = call)
 
-        if (!is.null(labl_vals)) {
-          if (!is_scalar_character(labl_vals)) {
+        if (!is.null(labl_vals) && !is_scalar_character(labl_vals)) {
             cli_abort(c("x" = "{.arg labl_vals} requires a {.cls character} scalar."),
                       call = call)
-          }
         }
 
         name_col <- labl_cols %||% paste0("names_", self$id)
@@ -174,16 +173,18 @@ coracle_data <- R6::R6Class(
 
       for (col in self$grps_cols)
       {
-        col_values <- data[[col]]
-        # col_values <- col_values[!is.na(col_values)]
+        col_vals <- data[[col]] |>
+          unique() |>
+          sort(na.last = T)
 
-        if (length(unique(col_values)) > 1) {
-          self$children <- sort(unique(col_values)) |>
-            set_names() |>
+        children_names <- replace(col_vals, is.na(col_vals), "NA")
+
+        if (length(col_vals) > 1) {
+          children <- col_vals |>
             map(
               \(x)
               coracle_data$new(
-                data = data[data[[col]] == x, ],
+                data = data[data[[col]] %same_as% x, ],
                 grps = self$grps_cols,
                 join = self$join_col,
                 vals = self$vals_col,
@@ -191,6 +192,10 @@ coracle_data <- R6::R6Class(
                 labl_vals = labl_vals
               )
             )
+
+          names(children) <- children_names
+
+          self$children <- children
 
           break
         }
