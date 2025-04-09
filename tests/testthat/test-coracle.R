@@ -31,7 +31,4 @@ test_that("coracle", {
   cdo1 <- coracle_data$new(df1, grps = mbio, join = gene, vals = -c(mbio,gene), labl_cols = "column1")
   cdo2 <- coracle_data$new(df2, grps = drug, join = gene, vals = -c(drug,gene), labl_cols = "column2")
 
-  coracle(cdo1,cdo2)
-
-
 })

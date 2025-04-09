@@ -10,3 +10,5 @@
   same[is.na(same)] <- FALSE
   return(same)
 }
+
+

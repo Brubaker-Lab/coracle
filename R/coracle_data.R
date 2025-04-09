@@ -18,6 +18,8 @@ coracle_data <- R6::R6Class(
     #' @field id Scalar character hash ID for node.
     id = NULL,
 
+    cols = NULL,
+
     #' @field chunk `data.frame` of data for correlation.
     chunk = NULL,
 
@@ -70,23 +72,25 @@ coracle_data <- R6::R6Class(
                           labl_vals = NULL,
                           call = caller_env()) {
 
-
       self$id <- hash(as.numeric(Sys.time())) |> str_sub(-7)
 
       self$version <- as.character(packageVersion("coracle"))
 
-      ### Initial data check ------------
+      ### Inputs ------------
+
+      #### Data ------------
 
       if (!is.data.frame(data))
         cli_abort(c("x" = "{.arg data} requires a {.cls data.frame}."), call = call)
 
-      ### Tidyselect Group Column(s) ------------
+      #### Group Column(s) via Tidyselect ------------
 
       grps_expr <- enquo(grps)
       grps_pos <- eval_select(grps_expr, data)
       self$grps_cols <- names(grps_pos)
+      self$cols$grps <- names(grps_pos)
 
-      ### Tidyselect Join Column ------------
+      #### Join Column via Tidyselect ------------
 
       join_expr <- enquo(join)
       join_pos <- eval_select(join_expr, data)
@@ -96,8 +100,9 @@ coracle_data <- R6::R6Class(
 
       self$join_col <- names(join_pos)
       self$join_vals <- sort(unique(data[[self$join_col]]))
+      self$cols$join <- names(join_pos)
 
-      ### Tidyselect Variable Column(s) ------------
+      #### Value Column(s) via Tidyselect ------------
 
       vals_expr <- enquo(vals)
       vals_pos <- eval_select(vals_expr, data)
@@ -105,12 +110,7 @@ coracle_data <- R6::R6Class(
       if (length(vals_pos) < 1)
         cli_abort(c("x" = "{.arg vals} requires a selection."), call = call)
 
-      ### title ------------
-
-      if (length(grps_pos) < 1 && length(vals_pos) == 1)
-        cli_abort(c("x" = "{.arg grps} requires a selection."), call = call)
-
-      ### Ensure no overlapping selections ------------
+      #### No overlapping selections ------------
 
       if (length(intersect(grps_pos, join_pos)) != 0)
         cli_abort(c("x" = "{.arg grps} and {.arg join} may not share any column(s)."),
@@ -124,10 +124,42 @@ coracle_data <- R6::R6Class(
         cli_abort(c("x" = "{.arg join} and {.arg vals} may not share any column(s)."),
                   call = call)
 
-      ### Other Column(s)
+      #### Other Column(s) ------------
 
       self$other_cols <- subset(data, select = -c(join_pos, vals_pos, grps_pos)) |>
         names()
+      self$cols$other <- subset(data, select = -c(join_pos, vals_pos, grps_pos)) |>
+        names()
+
+      #### Label(s) ------------
+
+      if (!is.null(labl_cols) &&
+          !is_scalar_character(labl_cols))
+        cli_abort(c("x" = "{.arg labl_cols} requires a {.cls character} scalar."),
+                  call = call)
+
+      labl_cols <- labl_cols %||% paste0("col_", self$id)
+
+      if (!is.null(labl_vals) &&
+          !is_scalar_character(labl_vals)) {
+        cli_abort(c("x" = "{.arg labl_vals} requires a {.cls character} scalar."),
+                  call = call)
+      }
+
+      labl_vals <- labl_vals %||% paste0("val_", self$id)
+
+      ### Format ------------
+
+      if(length(grps_pos) > 0 && length(vals_pos) == 1){
+        format = "long"
+      } else if (length(grps_pos) == 0 && length(vals_pos) > 1){
+        format = "wide"
+      } else {
+        cli_abort(c("x" = "Error with {.arg grps} and {.arg vals} selections",
+                    "i" = "Data must be either:",
+                    ">" = "{.strong Wide} with zero (0) {.arg grps} {.emph and} multiple (2+) {.arg vals}, or",
+                    ">" = "{.strong Long} with one (1) {.arg grps} {.emph and} one (1) {.arg vals}"))
+      }
 
       ### Reassemble data ------------
 
@@ -136,29 +168,21 @@ coracle_data <- R6::R6Class(
 
       ### Transform data to long format, if necessary ------------
 
-      if (length(vals_pos) > 1) {
-        if (!is.null(labl_cols) && !is_scalar_character(labl_cols))
-          cli_abort(c("x" = "{.arg labl_cols} requires a {.cls character} scalar."),
-                    call = call)
-
-        if (!is.null(labl_vals) && !is_scalar_character(labl_vals)) {
-            cli_abort(c("x" = "{.arg labl_vals} requires a {.cls character} scalar."),
-                      call = call)
-        }
-
-        name_col <- labl_cols %||% paste0("names_", self$id)
-        values_col <- labl_vals %||% "values"
+      if(format == "wide"){
 
         data <- data |> pivot_longer(cols = all_of(names(vals_pos)),
-                                     names_to = name_col,
-                                     values_to = values_col)
+                                     names_to = labl_cols,
+                                     values_to = labl_vals)
 
-        self$grps_cols <- c(self$grps_cols, name_col)
-        self$vals_col <- values_col
+        self$grps_cols <- c(self$grps_cols, labl_cols)
+        self$cols$grps <- c(self$cols$grps, labl_cols)
+        self$vals_col <- labl_vals
+        self$cols$vals <- labl_vals
 
       } else {
         # If not necessary
         self$vals_col <- names(vals_pos)
+        self$cols$vals <- names(vals_pos)
       }
 
       ### Reorder columns -> grps, join, vals, other ------------
@@ -181,7 +205,7 @@ coracle_data <- R6::R6Class(
 
         if (length(col_vals) > 1) {
           children <- col_vals |>
-            map(
+            future_map(
               \(x)
               coracle_data$new(
                 data = data[data[[col]] %same_as% x, ],
@@ -204,13 +228,18 @@ coracle_data <- R6::R6Class(
       if (is.null(self$children)) {
         flags <- list()
 
-        if (any(duplicated(data[[self$join_col]])))
-          flags <- append(flags, "Duplicate join values.")
+        join_values <- data[[self$join_col]] |>
+          unique() |>
+          sort() # drops NAs
 
-        if (length(data[[self$join_col]]) < 3)
+        if (length(join_values) < 3)
           flags <- append(flags, "Less than 3 join values.")
 
-        if (length(unique(data[[self$vals_col]])) <= 1)
+        vals_values <- data[[self$vals_col]] |>
+          unique() |>
+          sort() # drops NAs
+
+        if (length(vals_values) <= 1)
           flags <- append(flags, "Constant values.")
 
         if (length(flags) > 0)
@@ -239,7 +268,7 @@ coracle_data <- R6::R6Class(
       if (!is.null(node$chunk)) {
         return(node$chunk)
       } else {
-        map(self$children, \(x) x$chunks) |> list_flatten()
+        map(node$children, \(x) x$chunks) |> list_flatten()
       }
     },
 
@@ -269,10 +298,11 @@ coracle_data <- R6::R6Class(
     #'
     #' @returns Data prepared for correlation as a `data.frame`.
     corr_data = function(node = self) {
-
       node$data |>
-        select(all_of(c(self$grps_cols, self$join_col, self$vals_col))) |>
-        rename_with(~ paste0(.x, "_", self$id))
+        select(all_of(c(
+          self$grps_cols, self$join_col, self$vals_col
+        ))) |>
+        rename_with( ~ paste0(.x, "_", self$id))
 
     },
 
@@ -282,7 +312,7 @@ coracle_data <- R6::R6Class(
     #' @param node The `coracle_data` root node for the search.
     #'
     #' @returns Character scalar of joining column name in data prepared for correlation.
-    corr_join = function(){
+    corr_join = function() {
       paste0(self$join_col, "_", self$id)
     },
 
@@ -292,7 +322,7 @@ coracle_data <- R6::R6Class(
     #' @param node The `coracle_data` root node for the search.
     #'
     #' @returns Character vector of grouping column(s) name(s) in data prepared for correlation.
-    corr_grps = function(){
+    corr_grps = function() {
       paste0(self$grps_cols, "_", self$id)
     },
 
@@ -302,7 +332,7 @@ coracle_data <- R6::R6Class(
     #' @param node The `coracle_data` root node for the search.
     #'
     #' @returns Character scalar of value column name in data prepared for correlation.
-    corr_vals = function(){
+    corr_vals = function() {
       paste0(self$vals_col, "_", self$id)
     },
 
@@ -316,7 +346,7 @@ coracle_data <- R6::R6Class(
       if (!is.null(node$chunk)) {
         return(node)
       } else {
-        map(self$children, \(x) x$leaves) |> list_flatten()
+        map(node$children, \(x) x$leaves) |> list_flatten()
       }
     },
 
@@ -328,13 +358,13 @@ coracle_data <- R6::R6Class(
     #' @returns List of `coracle_data` leaf nodes with data valid for correlation.
     leaves_valid = function(node = self) {
       if (!is.null(node$chunk)) {
-        if (length(node$chunk_flags) == 0) {
+        if (is_empty(node$chunk_flags)) {
           return(node)
         } else {
           return(NULL)
         }
       } else {
-        map(self$children, \(x) x$leaves_valid) |> list_flatten() |> compact()
+        map(node$children, \(x) x$leaves_valid) |> list_flatten() |> compact()
       }
     },
 
@@ -346,13 +376,13 @@ coracle_data <- R6::R6Class(
     #' @returns List of `coracle_data` leaf nodes with data invalid for correlation.
     leaves_invalid = function(node = self) {
       if (!is.null(node$chunk)) {
-        if (length(node$chunk_flags) != 0) {
+        if (!is_empty(node$chunk_flags)) {
           return(node)
         } else {
           return(NULL)
         }
       } else {
-        map(self$children, \(x) x$leaves_invalid) |> list_flatten() |> compact()
+        map(node$children, \(x) x$leaves_invalid) |> list_flatten() |> compact()
       }
     }
   )
