@@ -33,8 +33,8 @@ coracle <- function(x,
     result <- pairwise_correlation(x, y, method)
 
     return (coracle_data$new(data = result,
-                     grps = x$grps_cols,
-                     join = tail(y$grps_cols,n=1),
+                     grps = x$cols$grps,
+                     join = y$cols$grps,
                      vals = stat_name[[method]]))
 
   } else if (!is.null(x)) {
@@ -114,7 +114,9 @@ corr_result <- function(a,
 #'
 #' @returns A data.frame of correlation results.
 pairwise_correlation <- function(x, y, method) {
-  if (length(intersect(x$join_vals, y$join_vals)) < 3)
+
+  if (length(intersect(x$data[[x$cols$join]],
+                       y$data[[y$cols$join]])) < 3)
     cli_abort(c("x" = "Not enough overlap in join values to run correlation."))
 
   invalid_corrs <- c(x$leaves_invalid, y$leaves_invalid) |>
@@ -140,18 +142,34 @@ pairwise_correlation <- function(x, y, method) {
 #'
 #' @returns A `corr_result` data.frame.
 correlate <- function(a, b, method) {
-  # avoids `join_by`'s input validation
-  a_join <- a$corr_join
-  b_join <- b$corr_join
 
-  corr_data <- full_join(a$corr_data,
-                         b$corr_data,
+  a_data <- a$data[c(a$cols$grps,
+                     a$cols$join,
+                     a$cols$vals)] |>
+    rename_with(\(x) paste(x, a$meta$id,"a", sep = "_"))
+
+  b_data <- b$data[c(b$cols$grps,
+                     b$cols$join,
+                     b$cols$vals)] |>
+    rename_with(\(x) paste(x, b$meta$id,"b", sep = "_"))
+
+  # Assiging to variables avoids `join_by`'s input validation
+
+  a_join <- paste(a$cols$join, a$meta$id,"a", sep = "_")
+  b_join <- paste(b$cols$join, b$meta$id,"b", sep = "_")
+
+
+  corr_data <- full_join(a_data,
+                         b_data,
                          by = join_by(!!sym(a_join) == !!sym(b_join))) |>
     drop_na()
 
+  a_vals <- paste(a$cols$vals, a$meta$id,"a", sep = "_")
+  b_vals <- paste(b$cols$vals, b$meta$id,"b", sep = "_")
+
   corr <- cor.test(
-    x = corr_data[[a$corr_vals]],
-    y = corr_data[[b$corr_vals]],
+    x = corr_data[[a_vals]],
+    y = corr_data[[b_vals]],
     method = method,
     exact = FALSE
   )

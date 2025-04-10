@@ -1,0 +1,53 @@
+---
+title: "Benchmarks"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(future)
+library(coracle)
+```
+
+```{r}
+
+run_trial <- function(workers, grps_log2, join_log2, vals_log2){
+  
+  if(workers == 1){
+    plan(sequential)
+  } else {
+    plan(multisession, workers = workers)
+  }
+  
+  data <- expand_grid(
+    g = 1:2^grps_log2,
+    j = 1:2^join_log2,
+    v = 1:2^join_log2)
+  
+  cdo <- coracle_data$new(data, g, j, v)
+  
+  data.frame(time = cdo$meta$time$total,
+             workers = workers,
+       grps_log2 = grps_log2,
+       join_log2 = join_log2,
+       vals_log2 = vals_log2
+       )
+  
+  
+}
+
+trials <- expand_grid(
+  workers = c(1, 2, 4),
+  grps_log2 = 1:3,
+  join_log2 = 1:3,
+  vals_log2 = 1:3
+)
+
+results <- trials |> 
+  pmap(run_trial, .progress = T) |> 
+  list_rbind()
+
+
+
+```

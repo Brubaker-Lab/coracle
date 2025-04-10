@@ -10,14 +10,6 @@ Chunks of stored data as a list of \code{data.frames}.
 
 Data as a \code{data.frame}.
 
-Data prepared for correlation as a \code{data.frame}.
-
-Character scalar of joining column name in data prepared for correlation.
-
-Character vector of grouping column(s) name(s) in data prepared for correlation.
-
-Character scalar of value column name in data prepared for correlation.
-
 List of \code{coracle_data} leaf nodes.
 
 List of \code{coracle_data} leaf nodes with data valid for correlation.
@@ -33,25 +25,11 @@ Branches are based on grouping variables. Data is stored as chunks in the leaf n
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{version}}{Scalar character of \code{coracle} package version used to generate this node.}
-
-\item{\code{id}}{Scalar character hash ID for node.}
+\item{\code{children}}{List of child \code{coracle_data} node(s).}
 
 \item{\code{chunk}}{\code{data.frame} of data for correlation.}
 
-\item{\code{children}}{List of child \code{coracle_data} node(s).}
-
-\item{\code{grps_cols}}{Character vector names of grouping column(s).}
-
 \item{\code{grps_vals}}{Named list of grouping column(s) and chunk value(s).}
-
-\item{\code{join_col}}{Character scalar name of joining column.}
-
-\item{\code{join_vals}}{Vector of values in joining column.}
-
-\item{\code{vals_col}}{Character scalar name of values column.}
-
-\item{\code{other_cols}}{Character vector of names of other column(s).}
 
 \item{\code{chunk_flags}}{Boolean indication of whether this node is valid for correlation.}
 }
@@ -76,8 +54,9 @@ Create a new \code{coracle_data} node
   join = NULL,
   vals = NULL,
   ...,
-  labl_cols = NULL,
-  labl_vals = NULL,
+  labl_cols = "cols",
+  labl_vals = "vals",
+  parent = NULL,
   call = caller_env()
 )}\if{html}{\out{</div>}}
 }
@@ -98,6 +77,8 @@ Create a new \code{coracle_data} node
 \item{\code{labl_cols}}{(Optional) Character scalar column name for long-format groups.}
 
 \item{\code{labl_vals}}{(Optional) Character scalar column name for long-format values.}
+
+\item{\code{parent}}{(Optional) A \code{coracle_data} node.}
 
 \item{\code{call}}{Caller environment for error reporting.}
 }

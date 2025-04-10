@@ -6,6 +6,7 @@
 #' @import dplyr
 #' @importFrom ppcor pcor.test
 #' @importFrom furrr future_pmap future_map
+#' @importFrom future nbrOfWorkers futureSessionInfo
 #' @importFrom rlang arg_match enquo hash is_scalar_character caller_env caller_arg is_empty
 #' @importFrom stats p.adjust cor.test
 #' @importFrom stringr str_replace str_remove str_sub
