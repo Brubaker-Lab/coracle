@@ -6,8 +6,6 @@
 \value{
 A \code{coracle_data} root node.
 
-Chunks of stored data as a list of \code{data.frames}.
-
 Data as a \code{data.frame}.
 
 List of \code{coracle_data} leaf nodes.
