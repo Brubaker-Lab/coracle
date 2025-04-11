@@ -13,7 +13,6 @@ coracle_data <- R6::R6Class(
   ## Public ------------
 
   public = list(
-
     ### Fields ------------
 
     meta = NULL,
@@ -55,7 +54,6 @@ coracle_data <- R6::R6Class(
                           labl_vals = "vals",
                           parent = NULL,
                           call = caller_env()) {
-
       ## Data ------------
 
       if (!is.data.frame(data))
@@ -63,7 +61,7 @@ coracle_data <- R6::R6Class(
 
       ## Parent ------------
 
-      if(!is.null(parent) && !("coracle_data" %in% class(parent)))
+      if (!is.null(parent) && !("coracle_data" %in% class(parent)))
         cli_abort(c("x" = "{.arg parent} requires a {.cls coracle_data}."), call = call)
 
       self$parent = parent
@@ -74,7 +72,7 @@ coracle_data <- R6::R6Class(
 
       self$meta$version <- as.character(packageVersion("coracle"))
 
-      self$meta$future$n_workers <- future::nbrOfWorkers()
+      self$meta$future$n_workers <- nbrOfWorkers()
 
       self$meta$time$start <- Sys.time()
 
@@ -129,21 +127,18 @@ coracle_data <- R6::R6Class(
         cli_abort(c("x" = "{.arg labl_cols} requires a {.cls character} scalar."),
                   call = call)
 
-      if (!is_scalar_character(labl_vals)) {
+      if (!is_scalar_character(labl_vals))
         cli_abort(c("x" = "{.arg labl_vals} requires a {.cls character} scalar."),
                   call = call)
-      }
 
       ## Format Data ------------
 
-      if(length(grps_pos) > 0 && length(vals_pos) == 1){
-
+      if (length(grps_pos) > 0 && length(vals_pos) == 1) {
         # Long
 
         self$cols$vals <- names(vals_pos)
 
-      } else if (length(grps_pos) == 0 && length(vals_pos) > 1){
-
+      } else if (length(grps_pos) == 0 && length(vals_pos) > 1) {
         # Wide
 
         data <- data |> pivot_longer(cols = all_of(names(vals_pos)),
@@ -154,10 +149,14 @@ coracle_data <- R6::R6Class(
         self$cols$vals <- labl_vals
 
       } else {
-        cli_abort(c("x" = "Error with {.arg grps} and {.arg vals} selections",
-                    "i" = "Data must be either:",
-                    ">" = "{.strong Wide} with zero (0) {.arg grps} {.emph and} multiple (2+) {.arg vals}, or",
-                    ">" = "{.strong Long} with one (1) {.arg grps} {.emph and} one (1) {.arg vals}"))
+        cli_abort(
+          c(
+            "x" = "Error with {.arg grps} and {.arg vals} selections",
+            "i" = "Data must be either:",
+            ">" = "{.strong Wide} with zero (0) {.arg grps} {.emph and} multiple (2+) {.arg vals}, or",
+            ">" = "{.strong Long} with one (1) {.arg grps} {.emph and} one (1) {.arg vals}"
+          )
+        )
       }
 
       ### Reorder columns -> grps, join, vals, other
@@ -174,7 +173,7 @@ coracle_data <- R6::R6Class(
 
       self$meta$data$n_grps <- self$cols$grps |>
         set_names() |>
-        map(~length(unique(data[[.]])))
+        map( ~ length(unique(data[[.]])))
 
       ## Initialize Children, if appropriate ------------
 
@@ -184,23 +183,23 @@ coracle_data <- R6::R6Class(
           unique() |>
           sort(na.last = T)
 
-        if(length(col_vals) == 1){
-
+        if (length(col_vals) == 1) {
           next
 
         } else {
-
           data <- data |>
             arrange(!!sym(col)) |>
             group_by(!!self$meta$id := !!sym(col)) |>
             tidyr::nest() |>
             ungroup() |>
-            mutate(grps = list(self$cols$grps),
-                   join = self$cols$join,
-                   vals = self$cols$vals,
-                   labl_cols = labl_cols,
-                   labl_vals = labl_vals,
-                   parent = list(self))
+            mutate(
+              grps = list(self$cols$grps),
+              join = self$cols$join,
+              vals = self$cols$vals,
+              labl_cols = labl_cols,
+              labl_vals = labl_vals,
+              parent = list(self)
+            )
 
           children <- data |>
             select(-!!self$meta$id) |>
@@ -210,33 +209,11 @@ coracle_data <- R6::R6Class(
 
           self$children <- children
 
+          rm(data)
+
           break
 
         }
-
-        # children_names <- replace(col_vals, is.na(col_vals), "NA")
-        #
-        # if (length(col_vals) > 1) {
-        #   children <- col_vals |>
-        #     future_map(
-        #       \(x)
-        #       coracle_data$new(
-        #         data = data[data[[col]] %same_as% x, ],
-        #         grps = self$cols$grps,
-        #         join = self$cols$join,
-        #         vals = self$cols$vals,
-        #         labl_cols = labl_cols,
-        #         labl_vals = labl_vals,
-        #         parent = self
-        #       )
-        #     )
-        #
-        #   names(children) <- children_names
-        #
-        #   self$children <- children
-        #
-        #   break
-        # }
       }
 
       ## If not a leaf node, store data ------------
@@ -274,29 +251,12 @@ coracle_data <- R6::R6Class(
 
       self$meta$time$total <- self$meta$time$end - self$meta$time$start
 
-
-
-
     }
   ),
 
   ## Active Bindings ------------
 
   active = list(
-    #' @description
-    #' Active binding for chunks of stored data as a list of `data.frame`s.
-    #'
-    #' @param node The `coracle_data` root node for the search.
-    #'
-    #' @returns Chunks of stored data as a list of `data.frames`.
-    chunks = function(node = self) {
-      if (!is.null(node$chunk)) {
-        return(node$chunk)
-      } else {
-        map(node$children, \(x) x$chunks) |> list_flatten()
-      }
-    },
-
     #' @description
     #' Active binding for all stored data as a `data.frame`.
     #'
@@ -367,4 +327,3 @@ coracle_data <- R6::R6Class(
     }
   )
 )
-

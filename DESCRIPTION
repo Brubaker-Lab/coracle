@@ -1,6 +1,6 @@
 Package: coracle
 Title: A Correlation Engine
-Version: 1.0.7
+Version: 1.0.8
 Authors@R:
     person("Ray", "Krajci", , "rdk54@case.edu", role = c("aut", "cre"))
 Description: Provices functions for correlating data stored in columns.
