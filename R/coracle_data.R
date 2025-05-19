@@ -104,6 +104,8 @@ coracle_data <- R6::R6Class(
       if (length(vals_pos) < 1)
         cli_abort(c("x" = "{.arg vals} requires a selection."), call = call)
 
+      ### No Overlaps
+
       if (length(intersect(grps_pos, join_pos)) != 0)
         cli_abort(c("x" = "{.arg grps} and {.arg join} may not share any column(s)."),
                   call = call)
@@ -264,13 +266,14 @@ coracle_data <- R6::R6Class(
     #'
     #' @returns Data as a `data.frame`.
     data = function(node = self) {
+
       if (!is.null(node$chunk)) {
         return(node$chunk)
       } else {
-        temp <- self$chunks
+        temp <- node$leaves
 
         if (!is.data.frame(temp))
-          temp <- temp |> list_rbind()
+          temp <- temp$data |> list_rbind()
 
         return(temp)
       }

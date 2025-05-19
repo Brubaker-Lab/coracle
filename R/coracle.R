@@ -16,35 +16,45 @@ coracle <- function(x,
                     y = NULL,
                     z = NULL,
                     ...,
-                    method = "spearman") {
+                    method = "spearman",
+                    output = "coracle_data") {
+
   validate_coracle_input(x)
   validate_coracle_input(y)
   validate_coracle_input(z)
 
   arg_match(method, c("spearman", "pearson", "kendall"))
+  arg_match(output, c("coracle_data", "tibble"))
 
-  result <- NULL
 
   if (!is.null(x) && !is.null(y) && !is.null(z)) {
+
     cli_abort(c("x" = "Pairwise partial correlation has not been implemented yet"))
-    #result <- pairwise_partial_correlation(x, y, z, method)
+
+    result <- pairwise_partial_correlation(x, y, z, method)
+
   } else if (!is.null(x) && !is.null(y)) {
 
     result <- pairwise_correlation(x, y, method)
 
-    return (coracle_data$new(data = result,
-                     grps = x$cols$grps,
-                     join = y$cols$grps,
-                     vals = stat_name[[method]]))
+
 
   } else if (!is.null(x)) {
+
     cli_abort(c("x" = "Autocorrelation has not been implemented yet"))
-    #result <- autocorrelation(x, method)
+
+    result <- autocorrelation(x, method)
+
   } else {
+
     cli_abort(c("x" = "This case should be unreachable!"))
+
   }
 
-  result
+  return(coracle_data$new(data = result,
+                          grps = x$cols$grps,
+                          join = y$cols$grps,
+                          vals = stat_name[[method]]))
 
 }
 
@@ -59,7 +69,7 @@ validate_coracle_input <- function(input,
                                    arg = caller_arg(input),
                                    call = caller_env()) {
   if (!is.null(input) && !("coracle_data" %in% class(input))) {
-    cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_obj}."))
+    cli_abort(c("x" = "{.arg {arg}} requires {.cls coracle_data}."))
   }
 
 }
@@ -76,7 +86,7 @@ validate_coracle_input <- function(input,
 #' @param method The correlation method ("spearman", "pearson", or "kendall")
 #'
 #' @returns A data.frame of correlation results.
-corr_result <- function(a,
+corr_result <- function(a = NULL,
                         b = NULL,
                         c = NULL,
                         stat_value = NA,
